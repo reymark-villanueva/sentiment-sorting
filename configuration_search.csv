@@ -1,0 +1,13 @@
+preprocessing,model,vectorizer,macro_F1
+keepneg,MultinomialNB,count,0.6816
+full,MultinomialNB,count,0.6816
+none,MultinomialNB,count,0.6652
+keepneg,DecisionTree,count,0.6129
+full,DecisionTree,count,0.6129
+none,DecisionTree,count,0.6029
+keepneg,DecisionTree,tfidf,0.5898
+full,DecisionTree,tfidf,0.5898
+full,MultinomialNB,tfidf,0.5802
+keepneg,MultinomialNB,tfidf,0.5802
+none,DecisionTree,tfidf,0.5776
+none,MultinomialNB,tfidf,0.5738

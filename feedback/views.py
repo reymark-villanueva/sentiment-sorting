@@ -1,0 +1,296 @@
+"""
+Isabela State University - Cauayan Campus Library
+Feedback & Admin Sentiment Dashboard Views
+"""
+
+import csv
+import math
+from datetime import timedelta
+
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core.paginator import Paginator
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+
+from . import ml
+from .forms import FeedbackForm
+from .models import FeedbackLog, LibraryService
+
+DONUT_RADIUS = 38
+DONUT_CIRCUMFERENCE = 2 * math.pi * DONUT_RADIUS  # ≈ 238.8, matches the dashboard SVG r=38
+
+RANGE_WINDOWS = {
+    '7days': timedelta(days=7),
+    '30days': timedelta(days=30),
+    'semester': timedelta(days=180),
+}
+
+
+def _is_ajax(request):
+    return (
+        request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('accept', '')
+    )
+
+
+def _sentiment_breakdown(queryset):
+    """Return (total, positive, neutral, negative, pos_pct, neu_pct, neg_pct) for a FeedbackLog queryset."""
+    total = queryset.count()
+    if not total:
+        return 0, 0, 0, 0, 0.0, 0.0, 0.0
+    positive = queryset.filter(sentiment=FeedbackLog.Sentiment.POSITIVE).count()
+    neutral = queryset.filter(sentiment=FeedbackLog.Sentiment.NEUTRAL).count()
+    negative = total - positive - neutral
+    pos_pct = round(positive / total * 100, 1)
+    neu_pct = round(neutral / total * 100, 1)
+    neg_pct = round(negative / total * 100, 1)
+    return total, positive, neutral, negative, pos_pct, neu_pct, neg_pct
+
+
+def home(request):
+    """Public landing page: hero headline, CTA, and visual only."""
+    return render(request, 'home.html')
+
+
+def feedback_step(request):
+    """The public feedback wizard: pick a service, write feedback."""
+    context = {
+        'services': LibraryService.objects.filter(is_active=True),
+    }
+    return render(request, 'feedback_step.html', context)
+
+
+@require_POST
+def feedback_submit(request):
+    """Validate and persist a feedback submission (standard POST or AJAX/JSON)."""
+    form = FeedbackForm(request.POST)
+
+    if form.is_valid():
+        log = form.save(commit=False)
+        # comment is required by the form, so there's always text to classify.
+        log.sentiment = ml.classify(form.cleaned_data['comment']).capitalize()
+        log.save()
+        reference_code = f"ISU-LIB-{log.pk:06d}"
+
+        if _is_ajax(request):
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Thank you! Your library feedback has been submitted successfully.',
+                'reference_code': reference_code,
+            })
+
+        messages.success(
+            request,
+            f"Thank you! Your feedback was submitted (Reference: {reference_code})."
+        )
+        return redirect('home')
+
+    # Invalid submission
+    if _is_ajax(request):
+        return JsonResponse(
+            {'status': 'error', 'errors': form.errors.get_json_data()},
+            status=400,
+        )
+
+    messages.error(request, "Your feedback could not be submitted — please check the form and try again.")
+    context = {
+        'services': LibraryService.objects.filter(is_active=True),
+        'form': form,
+    }
+    return render(request, 'feedback_step.html', context, status=400)
+
+
+@staff_member_required(login_url='staff_login')
+def admin_dashboard(request):
+    """Staff-only real-time student sentiment monitoring dashboard."""
+    range_param = request.GET.get('range', '30days')
+    if range_param not in RANGE_WINDOWS:
+        range_param = '30days'
+    window = RANGE_WINDOWS[range_param]
+
+    now = timezone.now()
+    since = now - window
+    previous_since = since - window
+
+    logs_qs = FeedbackLog.objects.filter(timestamp__gte=since)
+    previous_qs = FeedbackLog.objects.filter(timestamp__gte=previous_since, timestamp__lt=since)
+
+    total, positive, neutral, negative, pos_pct, neu_pct, neg_pct = _sentiment_breakdown(logs_qs)
+
+    prev_total, _, _, _, prev_pos_pct, prev_neu_pct, prev_neg_pct = _sentiment_breakdown(previous_qs)
+
+    def _trend(curr, prev, has_prev):
+        if not has_prev:
+            return {'delta': None, 'direction': 'neutral', 'display': '—'}
+        delta = round(curr - prev, 1)
+        direction = 'positive' if delta > 0 else 'negative' if delta < 0 else 'neutral'
+        arrow = '↑' if delta > 0 else '↓' if delta < 0 else '→'
+        return {'delta': delta, 'direction': direction, 'display': f"{arrow} {delta:+.1f}%"}
+
+    positive_trend = _trend(pos_pct, prev_pos_pct, bool(prev_total))
+    neutral_trend = _trend(neu_pct, prev_neu_pct, bool(prev_total))
+    negative_trend = _trend(neg_pct, prev_neg_pct, bool(prev_total))
+
+    # Donut chart geometry (circle r=38 -> circumference ≈ 238.8)
+    pos_dash = round(DONUT_CIRCUMFERENCE * pos_pct / 100, 1)
+    neu_dash = round(DONUT_CIRCUMFERENCE * neu_pct / 100, 1)
+    neg_dash = round(DONUT_CIRCUMFERENCE * neg_pct / 100, 1)
+    donut = {
+        'circumference': round(DONUT_CIRCUMFERENCE, 1),
+        'pos_dash': pos_dash,
+        'neu_dash': neu_dash,
+        'neg_dash': neg_dash,
+        'neu_offset': round(-pos_dash, 1),
+        'neg_offset': round(-(pos_dash + neu_dash), 1),
+    }
+
+    # Per-service breakdown within the selected date range
+    service_breakdown = []
+    for service in LibraryService.objects.filter(is_active=True):
+        svc_qs = logs_qs.filter(service=service)
+        svc_total, _, _, _, svc_pos, svc_neu, svc_neg = _sentiment_breakdown(svc_qs)
+
+        is_it_related = any(k in service.name for k in ('Wi-Fi', 'Internet', 'Computer'))
+
+        if svc_total == 0:
+            status_type, status_text = 'neutral', 'No feedback recorded this period'
+            insight_text = "No feedback recorded this period — insight unavailable."
+        elif svc_neg >= 20:
+            status_type, status_text = 'danger', 'Needs Attention'
+            insight_text = (
+                "High negative sentiment — escalate to IT for an infrastructure review."
+                if is_it_related else
+                "High negative sentiment — prioritize a service review this period."
+            )
+        elif svc_neg >= 10:
+            status_type, status_text = 'warning', 'Monitor Closely'
+            insight_text = "Negative sentiment is rising — monitor closely and address recurring complaints."
+        elif svc_pos >= 70:
+            status_type, status_text = 'success', 'Performing Well'
+            insight_text = "Strong positive sentiment — maintain current service standards."
+        else:
+            status_type, status_text = 'success', 'Performing Well'
+            insight_text = "Sentiment is stable — no urgent action needed."
+
+        service_breakdown.append({
+            'name': service.name,
+            'icon': service.icon,
+            'description': service.description,
+            'pos_pct': svc_pos,
+            'neu_pct': svc_neu,
+            'neg_pct': svc_neg,
+            'total_count': svc_total,
+            'status_type': status_type,
+            'status_text': status_text,
+            'insight_text': insight_text,
+        })
+
+    # Automated key insight comparing best/worst performing services
+    scored = [s for s in service_breakdown if s['total_count'] > 0]
+    if scored:
+        worst = max(scored, key=lambda s: s['neg_pct'])
+        best = max(scored, key=lambda s: s['pos_pct'])
+        if worst['neg_pct'] > 0:
+            key_insight = (
+                f"{worst['name']} shows the highest negative sentiment this period at "
+                f"{worst['neg_pct']}% ({worst['total_count']} evaluations), while {best['name']} "
+                f"leads in positive sentiment at {best['pos_pct']}%."
+            )
+        else:
+            key_insight = (
+                f"All evaluated services are trending positive this period, led by {best['name']} "
+                f"at {best['pos_pct']}% positive sentiment."
+            )
+    else:
+        key_insight = "Not enough feedback has been recorded in this period to generate a trend insight."
+
+    # Trend chart: split the selected window into 6 buckets
+    bucket_count = 6
+    bucket_length = window / bucket_count
+    trend_points = []
+    for i in range(bucket_count):
+        bucket_start = since + bucket_length * i
+        bucket_end = since + bucket_length * (i + 1)
+        bucket_qs = FeedbackLog.objects.filter(timestamp__gte=bucket_start, timestamp__lt=bucket_end)
+        b_total, _, _, _, b_pos, b_neu, b_neg = _sentiment_breakdown(bucket_qs)
+        trend_points.append({
+            'label': 'Today' if i == bucket_count - 1 else bucket_end.strftime('%b %d'),
+            'positive': b_pos,
+            'neutral': b_neu,
+            'negative': b_neg,
+            'total': b_total,
+        })
+
+    # Recent feedback log stream (independent of the date-range filter), paginated.
+    # Relies on FeedbackLog.Meta.ordering (sentiment_priority, then -timestamp) so
+    # negative feedback surfaces first, matching the system's triage priority.
+    recent_qs = FeedbackLog.objects.select_related('service').all()
+    paginator = Paginator(recent_qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'range_param': range_param,
+        'positive': positive,
+        'neutral': neutral,
+        'negative': negative,
+        'total_responses': total,
+        'positive_percentage': f"{pos_pct}%",
+        'positive_count': f"{positive} responses",
+        'neutral_percentage': f"{neu_pct}%",
+        'neutral_count': f"{neutral} responses",
+        'negative_percentage': f"{neg_pct}%",
+        'negative_count': f"{negative} responses",
+        'total_feedback_count': f"{total:,} total evaluations this period",
+        'positive_trend': positive_trend,
+        'neutral_trend': neutral_trend,
+        'negative_trend': negative_trend,
+        'donut': donut,
+        'service_breakdown': service_breakdown,
+        'key_insight': key_insight,
+        'trend_points': trend_points,
+        'page_obj': page_obj,
+        'feedback_logs': page_obj.object_list,
+        'active_nav': 'sentiment',
+    }
+    return render(request, 'admin/dashboard.html', context)
+
+
+@staff_member_required(login_url='staff_login')
+@require_POST
+def feedback_resolve(request, pk):
+    """AJAX endpoint: mark a feedback log's administrative action as resolved."""
+    log = get_object_or_404(FeedbackLog, pk=pk)
+    log.is_action_resolved = True
+    log.action_label = "✓ Resolved"
+    log.save(update_fields=['is_action_resolved', 'action_label'])
+    return JsonResponse({'status': 'success', 'action_label': log.action_label})
+
+
+@staff_member_required(login_url='staff_login')
+def admin_export_report(request):
+    """Export the currently filtered feedback logs as a CSV report."""
+    range_param = request.GET.get('range', '30days')
+    if range_param not in RANGE_WINDOWS:
+        range_param = '30days'
+    since = timezone.now() - RANGE_WINDOWS[range_param]
+    logs = FeedbackLog.objects.select_related('service').filter(timestamp__gte=since)
+
+    response = HttpResponse(content_type='text/csv')
+    filename = f"ISU_Cauayan_Library_Sentiment_Report_{range_param}.csv"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Timestamp', 'Service', 'Sentiment', 'Comment', 'Action', 'Resolved'])
+    for log in logs:
+        writer.writerow([
+            log.timestamp.strftime('%Y-%m-%d %H:%M'),
+            log.service.name,
+            log.sentiment,
+            log.comment,
+            log.action_label,
+            'Yes' if log.is_action_resolved else 'No',
+        ])
+    return response

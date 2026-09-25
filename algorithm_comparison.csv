@@ -1,0 +1,4 @@
+Algorithm,Accuracy,Precision,Recall,F1 (macro),F1 (weighted),Train time (s),Predict time (s)
+Naive Bayes,0.7223,0.7185,0.6614,0.683,0.718,0.0107,0.0026
+Decision Tree,0.6417,0.5974,0.6303,0.6073,0.6473,0.7609,0.001
+Hybrid (NB -> DT cascade),0.744,0.714,0.6961,0.7042,0.7423,0.7985,0.0044

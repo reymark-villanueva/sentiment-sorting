@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Isabela State University - Cauayan Campus Library{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Library feedback and student sentiment monitoring system for Isabela State University - Cauayan Campus Library.{% endblock %}">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/lfs-logo.svg' %}">
+
+  <!-- Institutional Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+
+  <!-- Vanilla CSS Design System -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Django Messages Framework Alert Support -->
+  {% if messages %}
+  <div class="isu-container isu-messages">
+    {% for message in messages %}
+    <div class="isu-status-pill isu-status-{{ message.tags|default:'success' }} isu-message-banner">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Main Body Content Block -->
+  <main>
+    {% block content %}
+    <!-- Sub-templates inject page content here -->
+    {% endblock content %}
+  </main>
+
+  {% block footer %}
+  <!-- Footer Strip -->
+  <footer class="isu-footer">
+    <div class="isu-container">
+      <div class="isu-footer-inner">
+        <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Logo" class="isu-footer-logo">
+        <p class="isu-footer-tagline">
+          ISU Cauayan University Library — LEARN · RESEARCH · GROW
+        </p>
+        <p class="isu-footer-sub">
+          Isabela State University - Cauayan Campus • San Fermin, Cauayan City, Isabela, Philippines
+        </p>
+      </div>
+    </div>
+  </footer>
+  {% endblock footer %}
+
+  {% block extra_js %}{% endblock extra_js %}
+</body>
+</html>

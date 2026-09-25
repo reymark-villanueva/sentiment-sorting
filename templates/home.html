@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Welcome | Isabela State University - Cauayan Campus Library{% endblock %}
+
+{% block content %}
+<!-- Marketing-Style Hero Section: full-bleed campus photo, blurred (not a
+     color gradient) with a flat dark green wash on top for text legibility. -->
+<section class="isu-hero-section">
+  <div class="isu-hero-photo" style="background-image: url('{% static 'img/library_front.webp' %}');"></div>
+  <div class="isu-hero-overlay"></div>
+
+  <!-- LFS logo (in a white circle badge), top of the hero's centered
+       content stack. -->
+  <div class="isu-hero-brand">
+    <div class="isu-hero-brand-badge">
+      <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Cauayan Library Feedback System" class="isu-hero-brand-logo">
+    </div>
+  </div>
+
+  <div class="isu-container">
+    <div class="isu-hero-content">
+      <!-- Large Two-Line Serif Headline -->
+      <h1 class="isu-hero-headline">
+        Help Us Improve Your<br>Library Experience
+      </h1>
+
+      <!-- Short Supporting Sentence -->
+      <p class="isu-hero-lead">
+        Share your feedback on physical facilities, internet speed, study spaces,
+        and staff assistance to help us elevate learning resources at Isabela State University.
+      </p>
+
+      <!-- Prominent Pill-Shaped CTA Button -->
+      <div class="isu-hero-cta-group">
+        <a href="{% url 'feedback_step' %}" class="isu-btn-primary isu-btn-on-photo" id="btnHeroGiveFeedback">
+          <span>Give Feedback</span>
+          <span class="isu-btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </span>
+        </a>
+      </div>
+
+      <!-- Quick Assurance Note -->
+      <div class="isu-hero-note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>Responses are 100% confidential.</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock content %}
+
+{% block footer %}{% endblock footer %}

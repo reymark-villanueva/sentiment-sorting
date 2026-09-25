@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Staff Login | Isabela State University - Cauayan Campus Library{% endblock %}
+
+{% block content %}
+<div class="isu-feedback-layout">
+  <div class="isu-feedback-wrapper" style="max-width: 440px;">
+    <div class="isu-feedback-card">
+      <div class="isu-feedback-header" style="text-align: center;">
+        <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Logo" style="width: 48px; height: 48px; margin-bottom: 16px;">
+        <h2 class="isu-feedback-title">Staff Login</h2>
+        <p class="isu-feedback-subtitle">
+          Sign in to monitor sentiment reports and the trained model's feedback classifications.
+        </p>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div class="isu-status-pill isu-status-danger isu-message-banner">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <div class="isu-form-group">
+          <label class="isu-form-label" for="{{ form.username.id_for_label }}">Username</label>
+          {{ form.username }}
+        </div>
+
+        <div class="isu-form-group">
+          <label class="isu-form-label" for="{{ form.password.id_for_label }}">Password</label>
+          {{ form.password }}
+        </div>
+
+        <button type="submit" class="isu-btn-primary" style="width: 100%; margin-top: 8px;">
+          Sign In
+        </button>
+      </form>
+
+      <p style="text-align: center; font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 20px;">
+        <a href="{% url 'home' %}" class="isu-btn-link">&larr; Back to Library Home</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Library Feedback | Isabela State University - Cauayan Campus{% endblock %}
+
+{% block content %}
+<div class="isu-feedback-layout">
+  <div class="isu-feedback-wrapper">
+
+    <!-- Compact Top Bar with 3-Step Progress Indicator -->
+    <div class="isu-progress-bar-card">
+      <div class="isu-progress-brand">
+        <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Logo" class="isu-progress-logo">
+        <div>
+          <div class="isu-progress-brand-title">ISU Cauayan Library</div>
+          <div style="font-size: 0.6875rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Feedback Survey</div>
+        </div>
+      </div>
+
+      <!-- 3-Step Progress Stepper -->
+      <ol class="isu-stepper">
+        <li class="isu-step-item active" data-step="1">
+          <span class="isu-step-number">1</span>
+          <span class="isu-step-text">Service</span>
+        </li>
+        <li class="isu-step-line"></li>
+
+        <li class="isu-step-item" data-step="2">
+          <span class="isu-step-number">2</span>
+          <span class="isu-step-text">Feedback</span>
+        </li>
+        <li class="isu-step-line"></li>
+
+        <li class="isu-step-item" data-step="3">
+          <span class="isu-step-number">3</span>
+          <span class="isu-step-text">Submit</span>
+        </li>
+      </ol>
+    </div>
+
+    <!-- Centered Card Container, White Background, Rounded Corners -->
+    <div class="isu-feedback-card">
+
+      {% if form.errors %}
+      <div class="isu-status-pill isu-status-danger isu-message-banner">
+        Please correct the highlighted fields and try again.
+      </div>
+      {% endif %}
+
+      <!-- Standard Django POST Form with CSRF Token -->
+      <form method="POST" action="{% url 'feedback_submit' %}" id="isuFeedbackForm" data-home-url="{% url 'home' %}">
+        {% csrf_token %}
+
+        <!-- Hidden input fields to submit to Django view (names match FeedbackForm fields) -->
+        <input type="hidden" name="service" id="inputService" value="">
+        <input type="hidden" name="comment" id="inputComments" value="">
+
+        <!-- ================================================================
+             STEP 1: SERVICE SELECTION
+             ================================================================ -->
+        <div class="isu-form-step-panel" data-step="1">
+          <div class="isu-feedback-header">
+            <h2 class="isu-feedback-title">Give Us Your Feedback</h2>
+            <p class="isu-feedback-subtitle">
+              Select the library service you used and share your experience.
+            </p>
+          </div>
+
+          <div class="isu-section-heading">
+            <span class="isu-section-badge">1</span>
+            <span>Library Service — What are you giving feedback about?</span>
+          </div>
+
+          <!-- Loops over the Django context variable `services` -->
+          <div class="isu-service-grid" id="serviceCardsContainer">
+            {% for service in services %}
+            <div class="isu-service-card"
+                 data-service-id="{{ service.id }}"
+                 data-service-name="{{ service.name }}"
+                 tabindex="0"
+                 role="button"
+                 aria-pressed="false">
+              <div class="isu-service-check">✓</div>
+              <div class="isu-service-icon">
+                {% include "partials/_service_icon.html" with icon=service.icon size=26 %}
+              </div>
+              <div class="isu-service-name">{{ service.name }}</div>
+            </div>
+            {% empty %}
+            <div class="isu-empty-state" style="grid-column: 1 / -1;">
+              <p>No library services are currently configured. Please check back later.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- ================================================================
+             STEP 2: FEEDBACK TEXT — the only signal the sentiment model uses
+             ================================================================ -->
+        <div class="isu-form-step-panel" data-step="2" style="display: none;">
+          <div class="isu-feedback-header">
+            <h2 class="isu-feedback-title">Share Your Thoughts</h2>
+            <p class="isu-feedback-subtitle">
+              Tell us about your experience — our sentiment model classifies your feedback from what you write here.
+            </p>
+          </div>
+
+          <div class="isu-section-heading">
+            <span class="isu-section-badge">2</span>
+            <span>Student Feedback</span>
+          </div>
+
+          <!-- Quick Topic Chips -->
+          <div class="isu-form-group">
+            <label class="isu-form-label">Quick Aspects (Tap to tag):</label>
+            <div class="isu-chip-group">
+              <button type="button" class="isu-chip">Clean & Well-Maintained</button>
+              <button type="button" class="isu-chip">Courteous Librarians</button>
+              <button type="button" class="isu-chip">Needs Faster Wi-Fi</button>
+              <button type="button" class="isu-chip">Quiet Study Atmosphere</button>
+              <button type="button" class="isu-chip">Cold Air Conditioning</button>
+              <button type="button" class="isu-chip">Book Availability</button>
+              <button type="button" class="isu-chip">More Electrical Outlets</button>
+            </div>
+          </div>
+
+          <!-- Textarea for Feedback (required — this is the sentiment signal) -->
+          <div class="isu-form-group">
+            <label class="isu-form-label" for="feedbackCommentsText">Your Feedback:</label>
+            <p class="isu-form-hint">Tell us what went well or what specific improvements you suggest for this service.</p>
+            <textarea id="feedbackCommentsText" class="isu-textarea" required placeholder="E.g., The study carrels were quiet and comfortable, but the 3rd floor Wi-Fi access point experienced intermittent drops around 2 PM..."></textarea>
+          </div>
+        </div>
+
+        <!-- ================================================================
+             STEP 3: REVIEW SUMMARY & FINAL SUBMIT
+             ================================================================ -->
+        <div class="isu-form-step-panel" data-step="3" style="display: none;">
+          <div class="isu-feedback-header">
+            <h2 class="isu-feedback-title">Review & Submit</h2>
+            <p class="isu-feedback-subtitle">
+              Verify your feedback before submitting to the Library Quality Assurance system.
+            </p>
+          </div>
+
+          <div class="isu-section-heading">
+            <span class="isu-section-badge">3</span>
+            <span>Feedback Summary</span>
+          </div>
+
+          <div class="isu-summary-box">
+            <div class="isu-summary-row">
+              <span class="isu-summary-key">Target Service:</span>
+              <span class="isu-summary-val" id="summaryService">Not selected</span>
+            </div>
+            <div class="isu-summary-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+              <span class="isu-summary-key">Your Feedback:</span>
+              <span class="isu-summary-val" id="summaryComments" style="font-weight: 400; color: var(--color-text-body); font-style: italic;">
+                "Not written yet."
+              </span>
+            </div>
+          </div>
+
+          <p style="font-size: 0.8125rem; color: var(--color-text-muted); margin-bottom: 24px;">
+            By clicking Submit Feedback, your written feedback will be classified by our sentiment model and
+            aggregated in the Staff Sentiment Monitoring Dashboard to guide Cauayan Campus library investments.
+          </p>
+        </div>
+
+        <!-- ================================================================
+             BOTTOM NAVIGATION ROW (Cancel Link Left, Next / Submit Right)
+             ================================================================ -->
+        <div class="isu-form-footer">
+          <div>
+            <button type="button" class="isu-btn-link" id="btnCancelFeedback">
+              Cancel
+            </button>
+            <button type="button" class="isu-btn-secondary" id="btnPrevStep" style="display: none; padding: 14px 28px; font-size: 1rem;">
+              &larr; Back
+            </button>
+          </div>
+
+          <div>
+            <button type="button" class="isu-btn-primary" id="btnNextStep">
+              Next &rarr;
+            </button>
+            <button type="submit" class="isu-btn-primary" id="btnSubmitFeedback" style="display: none;">
+              Submit Feedback &check;
+            </button>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- ================================================================
+           CONFIRMATION STATE ("Thank You for Your Feedback!")
+           ================================================================ -->
+      <div id="confirmationStep" class="isu-confirmation-box" style="display: none;">
+        <div class="isu-confirm-badge">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h2 class="isu-confirm-title">Thank You for Your Feedback!</h2>
+        <p class="isu-confirm-text" id="confirmationMessage">
+          Your response has been logged into the Isabela State University Quality Assurance Database.
+          Your insights empower our librarians to maintain an optimal study environment for all Cauayan students.
+        </p>
+        <div style="background-color: var(--color-mint-subtle); display: inline-block; padding: 10px 20px; border-radius: var(--radius-sm); border: 1px dashed var(--color-emerald); margin-bottom: 28px; font-size: 0.875rem;">
+          Reference Code: <strong id="confirmationRefCode" style="color: var(--color-deep-green); font-family: monospace;">—</strong>
+        </div>
+        <div>
+          <a href="{% url 'home' %}" class="isu-btn-primary" style="margin-right: 12px;">
+            Return to Library Home
+          </a>
+          <a href="{% url 'feedback_step' %}" class="isu-btn-secondary">
+            Submit Another Evaluation
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<!-- Vanilla JS Stepper Controller -->
+<script src="{% static 'js/feedback.js' %}?v={% now 'U' %}"></script>
+{% endblock extra_js %}
+
+{% block footer %}{% endblock footer %}

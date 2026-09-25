@@ -1,0 +1,159 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Staff Console | ISU Cauayan Campus Library{% endblock %}</title>
+
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/lfs-logo.svg' %}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="isu-admin-body">
+
+  <!-- Mobile Top Header with Hamburger Toggle for Tablet / Mobile -->
+  <header class="isu-mobile-header">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button type="button" id="btnToggleSidebar" style="padding: 6px; color: var(--color-deep-green);" aria-label="Toggle Navigation">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU" style="width: 28px; height: 28px;">
+      <span style="font-family: var(--font-serif); font-weight: 700; color: var(--color-deep-green); font-size: 0.95rem;">
+        ISU Library Admin
+      </span>
+    </div>
+
+    <a href="{% url 'home' %}" class="isu-mobile-action-link">
+      Student View &rarr;
+    </a>
+  </header>
+
+  <!-- Mobile Backdrop -->
+  <div class="isu-sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- Left Sidebar (Fixed, Dark-on-Light) -->
+  <aside class="isu-admin-sidebar" id="adminSidebar">
+    <!-- Header: Logo + "ISU Library / ADMIN CONSOLE" -->
+    <div class="isu-sidebar-header">
+      <a href="{% url 'admin_dashboard' %}" class="isu-admin-brand">
+        <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Crest" class="isu-admin-brand-logo">
+        <div class="isu-admin-brand-info">
+          <span class="isu-admin-brand-name">ISU Library</span>
+          <span class="isu-admin-brand-tag">ADMIN CONSOLE</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Navigation Items with Line-Style Icons -->
+    <nav class="isu-sidebar-nav">
+      <div class="isu-sidebar-nav-heading">Analytics & Quality</div>
+
+      <!-- Sentiment Dashboard, Service Insights, Feedback Logs: all three anchor into
+           sections of this one page. Each carries ?range={{ range_param }} so clicking
+           between them doesn't silently drop the currently selected date-range filter
+           (the bug that looked like the whole dashboard "glitching" back to 30 Days).
+           `active` is server-rendered on Sentiment Dashboard as the correct initial
+           state; admin.js then keeps it in sync via scrollspy (and applies it
+           immediately on click) as the user moves between sections. -->
+      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}" class="isu-nav-item {% if active_nav == 'sentiment' or not active_nav %}active{% endif %}" data-section-target="sentiment-overview">
+        <div class="isu-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <span>Sentiment Dashboard</span>
+      </a>
+
+      <!-- Service Insights -->
+      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}#service-insights" class="isu-nav-item" data-section-target="service-insights">
+        <div class="isu-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+          </svg>
+        </div>
+        <span>Service Insights</span>
+      </a>
+
+      <!-- Feedback Logs -->
+      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}#recent-logs" class="isu-nav-item" data-section-target="recent-logs">
+        <div class="isu-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <span>Feedback Logs</span>
+      </a>
+
+      <div class="isu-sidebar-nav-heading" style="margin-top: 16px;">Management</div>
+
+      <!-- Django Admin (model management: services, users, permissions) -->
+      <a href="{% url 'admin:index' %}" class="isu-nav-item">
+        <div class="isu-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </div>
+        <span>Settings</span>
+      </a>
+
+      <!-- Public Student View Link -->
+      <a href="{% url 'home' %}" class="isu-nav-item" style="margin-top: auto;">
+        <div class="isu-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </div>
+        <span>Student Facing Portal</span>
+      </a>
+    </nav>
+
+    <!-- User Card at Bottom of Sidebar -->
+    <div class="isu-sidebar-footer">
+      <div class="isu-user-card">
+        <div class="isu-user-avatar">
+          {% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.username|slice:":2"|upper }}{% else %}?{% endif %}
+        </div>
+        <div class="isu-user-meta">
+          <span class="isu-user-name">{{ request.user.get_full_name|default:request.user.username|default:"Library Staff" }}</span>
+          <span class="isu-user-role">{% if request.user.is_superuser %}Head Librarian{% else %}Library Staff{% endif %}</span>
+          <!-- Django's LogoutView only accepts POST as of Django 5 — a plain <a> GET
+               link 405s and silently fails to sign out, so this has to be a form. -->
+          <form method="POST" action="{% url 'admin:logout' %}?next={% url 'home' %}">
+            {% csrf_token %}
+            <button type="submit" class="isu-user-link">Sign Out / Student View</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Admin Main Workspace -->
+  <main class="isu-admin-main">
+    {% block admin_content %}{% endblock admin_content %}
+  </main>
+
+  <script src="{% static 'js/admin.js' %}?v={% now 'U' %}"></script>
+  {% block extra_js %}{% endblock extra_js %}
+</body>
+</html>
