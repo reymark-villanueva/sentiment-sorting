@@ -12,19 +12,36 @@
 
 <!-- Top Header of Main Content Area -->
 <div class="isu-admin-topbar" id="sentiment-overview">
-  <!-- Date Range Controls & Export Button -->
+  <!-- Date Range Controls, Service Filter & Export Button -->
   <div class="isu-admin-controls">
-    <!-- Date Range Selector: real server-side filters via query params -->
+    <!-- Date Range Selector: real server-side filters via query params.
+         Each link carries &service=... too, so switching the date range
+         doesn't silently drop the current service filter. -->
     <div class="isu-pill-tabs">
-      <a href="?range=7days" class="isu-pill-tab {% if range_param == '7days' %}active{% endif %}">7 Days</a>
-      <a href="?range=30days" class="isu-pill-tab {% if range_param == '30days' %}active{% endif %}">30 Days</a>
-      <a href="?range=semester" class="isu-pill-tab {% if range_param == 'semester' %}active{% endif %}">This Semester</a>
+      <a href="?range=7days&service={{ service_param }}" class="isu-pill-tab {% if range_param == '7days' %}active{% endif %}">7 Days</a>
+      <a href="?range=30days&service={{ service_param }}" class="isu-pill-tab {% if range_param == '30days' %}active{% endif %}">30 Days</a>
+      <a href="?range=semester&service={{ service_param }}" class="isu-pill-tab {% if range_param == 'semester' %}active{% endif %}">This Semester</a>
     </div>
+
+    <!-- Service Filter: narrows both the breakdown table and Recent Feedback
+         Logs below to a single service. Navigates on change (see admin.js),
+         preserving the current date range. -->
+    <select
+      id="serviceFilterSelect"
+      class="isu-input"
+      style="width: auto; padding: 8px 32px 8px 14px;"
+      data-current-range="{{ range_param }}"
+      aria-label="Filter by library service">
+      <option value="" {% if not service_param %}selected{% endif %}>All Services</option>
+      {% for service in all_services %}
+      <option value="{{ service.pk }}" {% if service_param == service.pk|stringformat:"s" %}selected{% endif %}>{{ service.name }}</option>
+      {% endfor %}
+    </select>
 
     <input type="date" class="isu-date-input" value="{% now 'Y-m-d' %}" aria-label="Report generated on" readonly>
 
     <!-- Export Report: real CSV download of the currently filtered logs -->
-    <a class="isu-btn-export" href="{% url 'admin_export_report' %}?range={{ range_param }}">
+    <a class="isu-btn-export" href="{% url 'admin_export_report' %}?range={{ range_param }}&service={{ service_param }}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="7 10 12 15 17 10"></polyline>
@@ -35,23 +52,26 @@
   </div>
 </div>
 
+{% if not selected_service %}
 <!-- ========================================================================
-     ROW OF 4 STAT CARDS
+     ROW OF 4 STAT CARDS — hidden while a single service is selected, since
+     these are org-wide aggregates and the filtered view narrows down to the
+     two service-scoped tables below instead.
      ======================================================================== -->
 <div class="isu-stat-cards-grid">
   <div class="isu-stat-card">
     <div class="isu-stat-card-header">
-      <span class="isu-stat-card-title">Positive Sentiment</span>
-      <div class="isu-stat-card-icon isu-icon-positive">
+      <span class="isu-stat-card-title">Negative Sentiment</span>
+      <div class="isu-stat-card-icon isu-icon-negative">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/>
         </svg>
       </div>
     </div>
-    <div class="isu-stat-metric">{{ positive_percentage }}</div>
+    <div class="isu-stat-metric red-metric">{{ negative_percentage }}</div>
     <div class="isu-stat-footer">
-      <span class="isu-trend-badge isu-trend-{{ positive_trend.direction }}">{{ positive_trend.display }}</span>
-      <span>{{ positive_count }}</span>
+      <span class="isu-trend-badge isu-trend-{{ negative_trend.direction }}">{{ negative_trend.display }}</span>
+      <span>{{ negative_count }}</span>
     </div>
   </div>
 
@@ -73,17 +93,17 @@
 
   <div class="isu-stat-card">
     <div class="isu-stat-card-header">
-      <span class="isu-stat-card-title">Negative Sentiment</span>
-      <div class="isu-stat-card-icon isu-icon-negative">
+      <span class="isu-stat-card-title">Positive Sentiment</span>
+      <div class="isu-stat-card-icon isu-icon-positive">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/>
+          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
         </svg>
       </div>
     </div>
-    <div class="isu-stat-metric red-metric">{{ negative_percentage }}</div>
+    <div class="isu-stat-metric">{{ positive_percentage }}</div>
     <div class="isu-stat-footer">
-      <span class="isu-trend-badge isu-trend-{{ negative_trend.direction }}">{{ negative_trend.display }}</span>
-      <span>{{ negative_count }}</span>
+      <span class="isu-trend-badge isu-trend-{{ positive_trend.direction }}">{{ positive_trend.display }}</span>
+      <span>{{ positive_count }}</span>
     </div>
   </div>
 
@@ -135,10 +155,10 @@
       <div class="isu-donut-legend">
         <div class="isu-legend-item">
           <div class="isu-legend-left">
-            <span class="isu-legend-dot" style="background-color: var(--color-positive);"></span>
-            <span>Positive</span>
+            <span class="isu-legend-dot" style="background-color: var(--color-negative);"></span>
+            <span>Negative</span>
           </div>
-          <span class="isu-legend-val">{{ positive_percentage }} ({{ positive }})</span>
+          <span class="isu-legend-val">{{ negative_percentage }} ({{ negative }})</span>
         </div>
         <div class="isu-legend-item">
           <div class="isu-legend-left">
@@ -149,10 +169,10 @@
         </div>
         <div class="isu-legend-item">
           <div class="isu-legend-left">
-            <span class="isu-legend-dot" style="background-color: var(--color-negative);"></span>
-            <span>Negative</span>
+            <span class="isu-legend-dot" style="background-color: var(--color-positive);"></span>
+            <span>Positive</span>
           </div>
-          <span class="isu-legend-val">{{ negative_percentage }} ({{ negative }})</span>
+          <span class="isu-legend-val">{{ positive_percentage }} ({{ positive }})</span>
         </div>
       </div>
 
@@ -172,13 +192,13 @@
       <h3 class="isu-chart-title">Sentiment Trends Over Time</h3>
       <div style="display: flex; gap: 12px; font-size: 0.75rem;">
         <span style="display: inline-flex; align-items: center; gap: 5px;">
-          <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-positive);"></span> Positive
+          <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-negative);"></span> Negative
         </span>
         <span style="display: inline-flex; align-items: center; gap: 5px;">
           <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-neutral-sentiment);"></span> Neutral
         </span>
         <span style="display: inline-flex; align-items: center; gap: 5px;">
-          <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-negative);"></span> Negative
+          <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-positive);"></span> Positive
         </span>
       </div>
     </div>
@@ -203,6 +223,7 @@
   </div>
 
 </div>
+{% endif %}
 
 <!-- ========================================================================
      FULL-WIDTH TABLE: SENTIMENT BREAKDOWN BY LIBRARY SERVICE
@@ -212,10 +233,16 @@
     <div>
       <h3 class="isu-table-title">Sentiment Breakdown by Library Service</h3>
       <p style="font-size: 0.8125rem; color: var(--color-text-muted);">
-        Comprehensive distribution of satisfaction across all evaluated operational divisions for the selected period.
+        {% if selected_service %}
+          Filtered to <strong>{{ selected_service.name }}</strong> for the selected period.
+        {% else %}
+          Comprehensive distribution of satisfaction across all evaluated operational divisions for the selected period.
+        {% endif %}
       </p>
     </div>
-    <span class="isu-table-tag">{{ service_breakdown|length }} Service Domains</span>
+    <span class="isu-table-tag">
+      {% if selected_service %}Showing {{ selected_service.name }}{% else %}{{ service_breakdown|length }} Service Domains{% endif %}
+    </span>
   </div>
 
   <div class="isu-table-container">
@@ -243,9 +270,9 @@
           <td>
             {% if service.total_count %}
             <div class="isu-pill-row">
-              <span class="isu-status-pill isu-status-success">{{ service.pos_pct }}% Pos</span>
-              <span class="isu-status-pill isu-status-warning">{{ service.neu_pct }}% Neu</span>
               <span class="isu-status-pill isu-status-danger">{{ service.neg_pct }}% Neg</span>
+              <span class="isu-status-pill isu-status-warning">{{ service.neu_pct }}% Neu</span>
+              <span class="isu-status-pill isu-status-success">{{ service.pos_pct }}% Pos</span>
             </div>
             <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 6px;">
               {{ service.total_count }} evaluations
@@ -293,7 +320,11 @@
     <div>
       <h3 class="isu-table-title">Recent Feedback Logs</h3>
       <p style="font-size: 0.8125rem; color: var(--color-text-muted);">
-        Continuous stream of student and faculty reviews with direct administrative escalation triggers.
+        {% if selected_service %}
+          Filtered to <strong>{{ selected_service.name }}</strong> — continuous stream, negative-first.
+        {% else %}
+          Continuous stream of student and faculty reviews with direct administrative escalation triggers.
+        {% endif %}
       </p>
     </div>
     <span class="isu-table-tag" style="background-color: var(--color-mint-subtle); color: var(--color-deep-green);">
@@ -349,7 +380,13 @@
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
               </svg>
               <h4 style="font-family: var(--font-serif); font-size: 1.1rem; color: var(--color-deep-green); margin-bottom: 4px;">No Feedback Logs Found</h4>
-              <p style="font-size: 0.8125rem;">No student evaluations have been recorded yet.</p>
+              <p style="font-size: 0.8125rem;">
+                {% if selected_service %}
+                  No evaluations recorded yet for {{ selected_service.name }}.
+                {% else %}
+                  No student evaluations have been recorded yet.
+                {% endif %}
+              </p>
             </div>
           </td>
         </tr>
@@ -360,11 +397,11 @@
     {% if page_obj.paginator.num_pages > 1 %}
     <div class="isu-pagination">
       {% if page_obj.has_previous %}
-        <a href="?range={{ range_param }}&page={{ page_obj.previous_page_number }}" class="isu-btn-link">&larr; Prev</a>
+        <a href="?range={{ range_param }}&service={{ service_param }}&page={{ page_obj.previous_page_number }}" class="isu-btn-link">&larr; Prev</a>
       {% endif %}
       <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
       {% if page_obj.has_next %}
-        <a href="?range={{ range_param }}&page={{ page_obj.next_page_number }}" class="isu-btn-link">Next &rarr;</a>
+        <a href="?range={{ range_param }}&service={{ service_param }}&page={{ page_obj.next_page_number }}" class="isu-btn-link">Next &rarr;</a>
       {% endif %}
     </div>
     {% endif %}

@@ -100,8 +100,8 @@
         <div class="isu-form-step-panel" data-step="2" style="display: none;">
           <div class="isu-feedback-header">
             <h2 class="isu-feedback-title">Share Your Thoughts</h2>
-            <p class="isu-feedback-subtitle">
-              Tell us about your experience — our sentiment model classifies your feedback from what you write here.
+            <p class="isu-feedback-subtitle" id="step2Subtitle">
+              Tell us about your experience.
             </p>
           </div>
 
@@ -110,25 +110,20 @@
             <span>Student Feedback</span>
           </div>
 
-          <!-- Quick Topic Chips -->
+          <!-- Quick Topic Chips — populated per selected service by feedback.js
+               from `service_aspects` below (7 negative / 7 neutral / 7 positive
+               aspects specific to that service, not a generic one-size list). -->
           <div class="isu-form-group">
             <label class="isu-form-label">Quick Aspects (Tap to tag):</label>
-            <div class="isu-chip-group">
-              <button type="button" class="isu-chip">Clean & Well-Maintained</button>
-              <button type="button" class="isu-chip">Courteous Librarians</button>
-              <button type="button" class="isu-chip">Needs Faster Wi-Fi</button>
-              <button type="button" class="isu-chip">Quiet Study Atmosphere</button>
-              <button type="button" class="isu-chip">Cold Air Conditioning</button>
-              <button type="button" class="isu-chip">Book Availability</button>
-              <button type="button" class="isu-chip">More Electrical Outlets</button>
-            </div>
+            <div class="isu-chip-group" id="quickAspectsContainer"></div>
           </div>
+          {{ service_aspects|json_script:"service-aspects-data" }}
 
           <!-- Textarea for Feedback (required — this is the sentiment signal) -->
           <div class="isu-form-group">
             <label class="isu-form-label" for="feedbackCommentsText">Your Feedback:</label>
             <p class="isu-form-hint">Tell us what went well or what specific improvements you suggest for this service.</p>
-            <textarea id="feedbackCommentsText" class="isu-textarea" required placeholder="E.g., The study carrels were quiet and comfortable, but the 3rd floor Wi-Fi access point experienced intermittent drops around 2 PM..."></textarea>
+            <textarea id="feedbackCommentsText" class="isu-textarea" required></textarea>
           </div>
         </div>
 

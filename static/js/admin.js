@@ -26,7 +26,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // The date-range tabs and Export Report button are plain server-rendered
   // links (see admin/dashboard.html) and need no JS.
 
-  // 2. Sidebar scrollspy — Sentiment Dashboard / Service Insights / Feedback Logs
+  // 2. Service Filter — a <select> can't navigate on its own, so wire it to
+  // reload the page with ?service=<id>, preserving the current date range
+  // (read from a data attribute rather than hardcoding it here).
+  const serviceFilterSelect = document.getElementById('serviceFilterSelect');
+  if (serviceFilterSelect) {
+    serviceFilterSelect.addEventListener('change', () => {
+      const range = serviceFilterSelect.dataset.currentRange || '30days';
+      const service = serviceFilterSelect.value;
+      window.location.href = `?range=${encodeURIComponent(range)}&service=${encodeURIComponent(service)}`;
+    });
+  }
+
+  // 3. Sidebar scrollspy — Sentiment Dashboard / Service Insights / Feedback Logs
   // all point into sections of this one page, so the "active" highlight (normally
   // server-rendered per-page) has to be kept in sync client-side as the user
   // scrolls or clicks between them.

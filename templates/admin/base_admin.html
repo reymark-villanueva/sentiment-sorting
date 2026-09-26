@@ -60,13 +60,14 @@
       <div class="isu-sidebar-nav-heading">Analytics & Quality</div>
 
       <!-- Sentiment Dashboard, Service Insights, Feedback Logs: all three anchor into
-           sections of this one page. Each carries ?range={{ range_param }} so clicking
-           between them doesn't silently drop the currently selected date-range filter
-           (the bug that looked like the whole dashboard "glitching" back to 30 Days).
+           sections of this one page. Each carries ?range={{ range_param }}&service=...
+           so clicking between them doesn't silently drop the currently selected
+           date-range or service filter (the same class of bug that used to look
+           like the whole dashboard "glitching" back to 30 Days).
            `active` is server-rendered on Sentiment Dashboard as the correct initial
            state; admin.js then keeps it in sync via scrollspy (and applies it
            immediately on click) as the user moves between sections. -->
-      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}" class="isu-nav-item {% if active_nav == 'sentiment' or not active_nav %}active{% endif %}" data-section-target="sentiment-overview">
+      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}&service={{ service_param }}" class="isu-nav-item {% if active_nav == 'sentiment' or not active_nav %}active{% endif %}" data-section-target="sentiment-overview">
         <div class="isu-nav-item-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="20" x2="18" y2="10"></line>
@@ -78,7 +79,7 @@
       </a>
 
       <!-- Service Insights -->
-      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}#service-insights" class="isu-nav-item" data-section-target="service-insights">
+      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}&service={{ service_param }}#service-insights" class="isu-nav-item" data-section-target="service-insights">
         <div class="isu-nav-item-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
@@ -89,7 +90,7 @@
       </a>
 
       <!-- Feedback Logs -->
-      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}#recent-logs" class="isu-nav-item" data-section-target="recent-logs">
+      <a href="{% url 'admin_dashboard' %}?range={{ range_param }}&service={{ service_param }}#recent-logs" class="isu-nav-item" data-section-target="recent-logs">
         <div class="isu-nav-item-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>

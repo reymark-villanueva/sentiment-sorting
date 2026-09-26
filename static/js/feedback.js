@@ -32,6 +32,49 @@ document.addEventListener('DOMContentLoaded', () => {
   // Summary Elements
   const summaryService = document.getElementById('summaryService');
   const summaryComments = document.getElementById('summaryComments');
+  const step2Subtitle = document.getElementById('step2Subtitle');
+
+  // Quick Aspects data — 7 negative / 7 neutral / 7 positive phrases per
+  // service (see feedback/aspects.py), keyed by service pk as a string.
+  const aspectsDataEl = document.getElementById('service-aspects-data');
+  let serviceAspects = {};
+  if (aspectsDataEl) {
+    try {
+      serviceAspects = JSON.parse(aspectsDataEl.textContent) || {};
+    } catch (err) {
+      serviceAspects = {};
+    }
+  }
+
+  const quickAspectsContainer = document.getElementById('quickAspectsContainer');
+
+  function shuffle(array) {
+    const result = array.slice();
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
+  function renderQuickAspects(serviceId) {
+    if (!quickAspectsContainer) return;
+    quickAspectsContainer.innerHTML = '';
+    // Already a flat, server-shuffled list of {phrase, sentiment} objects
+    // (see feedback/aspects.py) — shuffled again here so re-selecting the
+    // same service mid-session doesn't always show the same order twice.
+    const entries = serviceAspects[serviceId];
+    if (!entries || !entries.length) return;
+
+    shuffle(entries).forEach(({ phrase, sentiment }) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'isu-chip';
+      chip.dataset.sentiment = sentiment;
+      chip.textContent = phrase;
+      quickAspectsContainer.appendChild(chip);
+    });
+  }
 
   // 1. Service Selection Handling
   const serviceCards = document.querySelectorAll('.isu-service-card');
@@ -46,14 +89,22 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedServiceId = card.getAttribute('data-service-id') || '';
       selectedServiceName = card.getAttribute('data-service-name') || '';
       if (inputService) inputService.value = selectedServiceId;
+      renderQuickAspects(selectedServiceId);
+      if (step2Subtitle) {
+        step2Subtitle.textContent = selectedServiceName
+          ? `Tell us about your experience with ${selectedServiceName}.`
+          : 'Tell us about your experience.';
+      }
       updateSummary();
     });
   });
 
-  // 2. Quick Feedback Chips / Tags
-  const chips = document.querySelectorAll('.isu-chip');
-  chips.forEach(chip => {
-    chip.addEventListener('click', () => {
+  // 2. Quick Feedback Chips / Tags — delegated, since chips are re-rendered
+  // per selected service rather than being fixed elements in the DOM.
+  if (quickAspectsContainer) {
+    quickAspectsContainer.addEventListener('click', (e) => {
+      const chip = e.target.closest('.isu-chip');
+      if (!chip) return;
       chip.classList.toggle('selected');
       const tagText = chip.innerText.trim();
       const textarea = document.getElementById('feedbackCommentsText');
@@ -63,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (inputComments && textarea) inputComments.value = textarea.value;
       updateSummary();
     });
-  });
+  }
 
   // Feedback textarea — the sole signal the sentiment model classifies
   const textarea = document.getElementById('feedbackCommentsText');
@@ -83,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 3. Stepper Navigation
-  function goToStep(step) {
+  function goToStep(step, { scroll = true } = {}) {
     if (step < 1 || step > totalSteps + 1) return;
     currentStep = step;
 
@@ -119,7 +170,16 @@ document.addEventListener('DOMContentLoaded', () => {
       cancelLink.style.display = currentStep <= totalSteps ? 'inline-flex' : 'none';
     }
 
-    window.scrollTo({ top: 120, behavior: 'smooth' });
+    // Scroll all the way to the document top (not a fixed mid-page offset)
+    // so the new step's own heading — "Give Us Your Feedback" / "Share Your
+    // Thoughts" / "Review & Submit" — is what the user actually sees, on
+    // every step, instead of landing mid-scroll with only the stepper
+    // corner visible above the fold. Skipped on the very first render
+    // (page just loaded at the top already; forcing another scroll there
+    // was itself the bug).
+    if (scroll) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   if (btnNext) {
@@ -219,5 +279,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize
   updateSummary();
-  goToStep(1);
+  goToStep(1, { scroll: false });
 });

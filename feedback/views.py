@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from . import ml
+from .aspects import aspects_by_service_id
 from .forms import FeedbackForm
 from .models import FeedbackLog, LibraryService
 
@@ -57,8 +58,10 @@ def home(request):
 
 def feedback_step(request):
     """The public feedback wizard: pick a service, write feedback."""
+    services = LibraryService.objects.filter(is_active=True)
     context = {
-        'services': LibraryService.objects.filter(is_active=True),
+        'services': services,
+        'service_aspects': aspects_by_service_id(services),
     }
     return render(request, 'feedback_step.html', context)
 
@@ -111,6 +114,17 @@ def admin_dashboard(request):
         range_param = '30days'
     window = RANGE_WINDOWS[range_param]
 
+    # Service filter — shared by both the "Sentiment Breakdown by Library
+    # Service" table and "Recent Feedback Logs" below, so selecting e.g.
+    # Wi-Fi narrows both to just that service's entries.
+    all_services = LibraryService.objects.filter(is_active=True)
+    service_param = request.GET.get('service', '')
+    selected_service = None
+    if service_param.isdigit():
+        selected_service = all_services.filter(pk=service_param).first()
+    if not selected_service:
+        service_param = ''  # missing/non-numeric/stale id -> fall back to "All Services"
+
     now = timezone.now()
     since = now - window
     previous_since = since - window
@@ -147,9 +161,11 @@ def admin_dashboard(request):
         'neg_offset': round(-(pos_dash + neu_dash), 1),
     }
 
-    # Per-service breakdown within the selected date range
+    # Per-service breakdown within the selected date range — narrowed to just
+    # the selected service when the service filter is active.
     service_breakdown = []
-    for service in LibraryService.objects.filter(is_active=True):
+    services_to_show = [selected_service] if selected_service else all_services
+    for service in services_to_show:
         svc_qs = logs_qs.filter(service=service)
         svc_total, _, _, _, svc_pos, svc_neu, svc_neg = _sentiment_breakdown(svc_qs)
 
@@ -224,15 +240,21 @@ def admin_dashboard(request):
             'total': b_total,
         })
 
-    # Recent feedback log stream (independent of the date-range filter), paginated.
-    # Relies on FeedbackLog.Meta.ordering (sentiment_priority, then -timestamp) so
-    # negative feedback surfaces first, matching the system's triage priority.
+    # Recent feedback log stream (independent of the date-range filter, but
+    # respects the same service filter as the breakdown table above),
+    # paginated. Relies on FeedbackLog.Meta.ordering (sentiment_priority,
+    # then -timestamp) so negative feedback surfaces first.
     recent_qs = FeedbackLog.objects.select_related('service').all()
+    if selected_service:
+        recent_qs = recent_qs.filter(service=selected_service)
     paginator = Paginator(recent_qs, 10)
     page_obj = paginator.get_page(request.GET.get('page'))
 
     context = {
         'range_param': range_param,
+        'service_param': service_param,
+        'selected_service': selected_service,
+        'all_services': all_services,
         'positive': positive,
         'neutral': neutral,
         'negative': negative,
@@ -277,6 +299,11 @@ def admin_export_report(request):
         range_param = '30days'
     since = timezone.now() - RANGE_WINDOWS[range_param]
     logs = FeedbackLog.objects.select_related('service').filter(timestamp__gte=since)
+
+    # Same service filter as the dashboard, so exporting matches what's on screen.
+    service_param = request.GET.get('service', '')
+    if service_param.isdigit():
+        logs = logs.filter(service_id=service_param)
 
     response = HttpResponse(content_type='text/csv')
     filename = f"ISU_Cauayan_Library_Sentiment_Report_{range_param}.csv"
