@@ -13,8 +13,9 @@ urlpatterns = [
     # Public Student Portal
     path('', views.home, name='home'),
 
-    # Staff Login — deliberately unlisted: no button/link anywhere in the public UI
-    # points here. LOGIN_URL in settings.py points here by name, so
+    # Staff Login — deliberately unlisted: the public landing page is for
+    # students only, so nothing there links here.
+    # LOGIN_URL in settings.py points here by name, so
     # @staff_member_required still redirects correctly. Always renders the login
     # form on GET, even if already authenticated as staff.
     path(
