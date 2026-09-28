@@ -8,6 +8,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.html import escape
 
 from .models import FeedbackLog, LibraryService
 
@@ -76,6 +77,19 @@ class PublicViewTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'home.html')
+
+    def test_home_does_not_link_staff_login(self):
+        response = self.client.get(reverse('home'))
+        self.assertNotContains(response, reverse('staff_login'))
+
+    def test_home_lists_every_active_service(self):
+        hidden = LibraryService.objects.first()
+        hidden.is_active = False
+        hidden.save()
+        response = self.client.get(reverse('home'))
+        for service in LibraryService.objects.filter(is_active=True):
+            self.assertContains(response, escape(service.name))
+        self.assertEqual(len(response.context['services']), LibraryService.objects.filter(is_active=True).count())
 
     def test_feedback_step_returns_200(self):
         response = self.client.get(reverse('feedback_step'))

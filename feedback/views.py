@@ -7,6 +7,7 @@ import csv
 import math
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
@@ -52,8 +53,11 @@ def _sentiment_breakdown(queryset):
 
 
 def home(request):
-    """Public landing page: hero headline, CTA, and visual only."""
-    return render(request, 'home.html')
+    """Public landing page."""
+    return render(request, 'home.html', {
+        'services': LibraryService.objects.filter(is_active=True),
+        'library_email': settings.LIBRARY_CONTACT_EMAIL,
+    })
 
 
 def feedback_step(request):

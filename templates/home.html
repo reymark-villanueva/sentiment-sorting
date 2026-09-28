@@ -1,59 +1,328 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Welcome | Isabela State University - Cauayan Campus Library{% endblock %}
+{% block title %}ISU Cauayan Library Feedback System{% endblock %}
+
+{% block fonts %}
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
+{% endblock fonts %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v={% now 'U' %}">
+{% endblock styles %}
+
+{% block extra_head %}
+<noscript><style>.lp-faq-panel[hidden]{display:block !important}</style></noscript>
+{% endblock extra_head %}
+
+{% block header %}
+<!-- Icon sprite: stroke icons referenced below via <use href="#i-…">. -->
+<svg class="lp-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M6 12h12"/><path d="M10 18h4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+</svg>
+
+<a class="lp-skip" href="#main">Skip to content</a>
+
+<header class="lp-header" data-header>
+  <div class="lp-container lp-header-inner">
+    <a class="lp-brand" href="{% url 'home' %}">
+      <img class="lp-brand-logo" src="{% static 'img/lfs-logo.svg' %}" alt="ISU Cauayan Library Feedback System logo" width="44" height="44">
+      <span class="lp-brand-text">
+        <span class="lp-brand-name">ISU Cauayan</span>
+        <span class="lp-brand-sub">Library Feedback System</span>
+      </span>
+    </a>
+
+    <button class="lp-menu-btn" type="button" aria-expanded="false" aria-controls="lp-menu" data-menu-toggle>
+      <svg class="lp-icon lp-menu-open" aria-hidden="true" focusable="false"><use href="#i-menu"/></svg>
+      <svg class="lp-icon lp-menu-close" aria-hidden="true" focusable="false"><use href="#i-close"/></svg>
+      <span class="lp-sr-only">Menu</span>
+    </button>
+
+    <div class="lp-menu" id="lp-menu">
+      <nav class="lp-nav" aria-label="Primary">
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#about">About the Library</a></li>
+        </ul>
+      </nav>
+      <div class="lp-header-actions">
+        <a class="lp-btn lp-btn-primary" href="{% url 'feedback_step' %}">Give Feedback</a>
+      </div>
+    </div>
+  </div>
+</header>
+{% endblock header %}
+
+{% block messages %}{% endblock messages %}
 
 {% block content %}
-<!-- Marketing-Style Hero Section: full-bleed campus photo, blurred (not a
-     color gradient) with a flat dark green wash on top for text legibility. -->
-<section class="isu-hero-section">
-  <div class="isu-hero-photo" style="background-image: url('{% static 'img/library_front.webp' %}');"></div>
-  <div class="isu-hero-overlay"></div>
+<!-- 1. Hero: full campus photo with the headline set directly on it. The
+     section slides up under the translucent header so the photo shows through. -->
+<section class="lp-hero" aria-labelledby="hero-title">
+  <div class="lp-hero-bg" aria-hidden="true"></div>
 
-  <!-- LFS logo (in a white circle badge), top of the hero's centered
-       content stack. -->
-  <div class="isu-hero-brand">
-    <div class="isu-hero-brand-badge">
-      <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Cauayan Library Feedback System" class="isu-hero-brand-logo">
+  {% if messages %}
+  <div class="lp-container lp-messages" role="status">
+    {% for message in messages %}
+    <p class="lp-message lp-message-{{ message.tags|default:'success' }}">{{ message }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="lp-container lp-hero-copy">
+    <p class="lp-pill">
+      <svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg>
+      Responses are 100% confidential
+    </p>
+    <h1 id="hero-title" class="lp-hero-title">Help us improve your<br> library experience.</h1>
+    <p class="lp-hero-lead">
+      Share feedback on facilities, library staff, Wi-Fi, computers, borrowing, study areas,
+      and online resources at the Isabela State University – Cauayan Campus Library.
+    </p>
+    <div class="lp-btn-row">
+      <a class="lp-btn lp-btn-primary" href="{% url 'feedback_step' %}">
+        Give Feedback
+        <svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg>
+      </a>
     </div>
   </div>
 
-  <div class="isu-container">
-    <div class="isu-hero-content">
-      <!-- Large Two-Line Serif Headline -->
-      <h1 class="isu-hero-headline">
-        Help Us Improve Your<br>Library Experience
-      </h1>
-
-      <!-- Short Supporting Sentence -->
-      <p class="isu-hero-lead">
-        Share your feedback on physical facilities, internet speed, study spaces,
-        and staff assistance to help us elevate learning resources at Isabela State University.
-      </p>
-
-      <!-- Prominent Pill-Shaped CTA Button -->
-      <div class="isu-hero-cta-group">
-        <a href="{% url 'feedback_step' %}" class="isu-btn-primary isu-btn-on-photo" id="btnHeroGiveFeedback">
-          <span>Give Feedback</span>
-          <span class="isu-btn-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
+  <div class="lp-hero-visual">
+    <div class="lp-container lp-hero-stage" role="img"
+         aria-label="Example feedback: an anonymous student writes about Study Areas: We need more outlets near the reading tables.">
+      <div class="lp-float-card">
+        <p class="lp-card-label">
+          <svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-chat"/></svg>
+          New feedback
+        </p>
+        <div class="lp-card-meta">
+          <span class="lp-icon-tile"><svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg></span>
+          <span>
+            <span class="lp-card-strong">Study Areas</span>
+            <span class="lp-card-muted">Anonymous student</span>
           </span>
-        </a>
+        </div>
+        <p class="lp-quote">“We need more outlets near the reading tables.”</p>
       </div>
+    </div>
+  </div>
+</section>
 
-      <!-- Quick Assurance Note -->
-      <div class="isu-hero-note">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-        <span>Responses are 100% confidential.</span>
+<!-- 2. Categories -->
+<section class="lp-section lp-categories" aria-labelledby="categories-title" data-reveal>
+  <div class="lp-container">
+    <h2 id="categories-title" class="lp-h2 lp-center">Feedback on every corner of the library.</h2>
+    {# Same services (and icons) as the feedback form, straight from LibraryService. #}
+    <ul class="lp-category-list">
+      {% for service in services %}
+      <li>
+        <span class="lp-category-icon" aria-hidden="true">{% include "partials/_service_icon.html" with icon=service.icon size=24 %}</span>
+        {{ service.name }}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<!-- 3. Features -->
+<section class="lp-section lp-features" aria-labelledby="features-title" data-reveal>
+  <div class="lp-container">
+    <header class="lp-section-head">
+      <h2 id="features-title" class="lp-h2">Honest feedback, less noise.</h2>
+      <p class="lp-lead">Student comments become clear, sorted signals that help the University Library decide what to fix first.</p>
+    </header>
+    <div class="lp-feature-grid">
+      <article class="lp-feature">
+        <div class="lp-feature-icon">
+          <span class="lp-feature-orb lp-orb-green" aria-hidden="true"></span>
+          <span class="lp-feature-disc"><svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-clock"/></svg></span>
+        </div>
+        <h3>Quick to share</h3>
+        <p>Pick a category and add a short comment. No long surveys.</p>
+      </article>
+      <article class="lp-feature">
+        <div class="lp-feature-icon">
+          <span class="lp-feature-orb lp-orb-gold" aria-hidden="true"></span>
+          <span class="lp-feature-disc"><svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg></span>
+        </div>
+        <h3>Confidential by design</h3>
+        <p>Speak freely. Your responses stay confidential and are used to improve library services.</p>
+      </article>
+      <article class="lp-feature">
+        <div class="lp-feature-icon">
+          <span class="lp-feature-orb lp-orb-green" aria-hidden="true"></span>
+          <span class="lp-feature-disc"><svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-sort"/></svg></span>
+        </div>
+        <h3>Sorted for action</h3>
+        <p>Sentiment analysis flags urgent concerns so staff see what needs attention first.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- 4. How it works -->
+<section class="lp-section lp-how" id="how" aria-labelledby="how-title">
+  <div class="lp-container">
+    <header class="lp-section-head" data-reveal>
+      <h2 id="how-title" class="lp-h2">From your voice to real change.</h2>
+      <p class="lp-lead">Every response you share moves through the same clear path.</p>
+    </header>
+
+    <ol class="lp-steps">
+      <!-- Step 1 -->
+      <li class="lp-step" data-reveal>
+        <div class="lp-step-visual lp-panel-form" role="img"
+             aria-label="Sample feedback form: Internet/Wi-Fi category selected, comment: Wi-Fi keeps disconnecting near the 2nd floor reading area.">
+          <div class="lp-mini-card">
+            <p class="lp-mini-label">Category</p>
+            <div class="lp-mini-chips">
+              <span class="lp-mini-chip">Facilities</span>
+              <span class="lp-mini-chip">Library Staff</span>
+              <span class="lp-mini-chip is-selected">Internet/Wi-Fi</span>
+              <span class="lp-mini-chip">Study Areas</span>
+              <span class="lp-mini-chip">+4 more</span>
+            </div>
+            <p class="lp-mini-label">Comment</p>
+            <p class="lp-mini-comment">Wi-Fi keeps disconnecting near the 2nd floor reading area.</p>
+          </div>
+        </div>
+        <div class="lp-step-text">
+          <span class="lp-step-num" aria-hidden="true">1</span>
+          <h3>Share your library experience.</h3>
+          <p>Choose a category and tell us what worked or what didn't.</p>
+        </div>
+      </li>
+
+      <li class="lp-step-connector" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><path d="M24 0 C24 60 76 40 76 100" fill="none" stroke="#0B5A3A" stroke-opacity=".45" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+      </li>
+
+      <!-- Step 2 -->
+      <li class="lp-step lp-step-reverse" data-reveal>
+        <div class="lp-step-visual lp-panel-list" role="img"
+             aria-label="Incoming feedback sorted by sentiment: negative, Aircon in the study area is too weak; neutral, Could hours be extended during finals?; positive, Staff helped me find a reference fast.">
+          <div class="lp-mini-card">
+            <div class="lp-list-head">
+              <span class="lp-card-strong">Incoming feedback</span>
+              <span class="lp-list-sort"><svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-sort"/></svg>Sorted by sentiment</span>
+            </div>
+            <ul class="lp-feed">
+              <li><span class="lp-tag lp-tag-neg">Negative</span><span>Aircon in the study area is too weak.</span></li>
+              <li><span class="lp-tag lp-tag-neu">Neutral</span><span>Could hours be extended during finals?</span></li>
+              <li><span class="lp-tag lp-tag-pos">Positive</span><span>Staff helped me find a reference fast.</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="lp-step-text">
+          <span class="lp-step-num" aria-hidden="true">2</span>
+          <h3>Your feedback is sorted by sentiment.</h3>
+          <p>Each response is classified as positive, neutral, or negative, so pressing concerns reach library staff first.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- 5. FAQ -->
+<section class="lp-section lp-faq" id="faq" aria-labelledby="faq-title" data-reveal>
+  <div class="lp-container lp-faq-grid">
+    <h2 id="faq-title" class="lp-h2">Frequently asked questions</h2>
+    <div class="lp-accordion" data-accordion>
+      <div class="lp-faq-item">
+        <h3>
+          <button type="button" class="lp-faq-btn" id="faq-q1" aria-expanded="true" aria-controls="faq-a1">
+            Is my feedback confidential?
+            <span class="lp-faq-sign" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="lp-faq-panel" id="faq-a1" role="region" aria-labelledby="faq-q1">
+          <p>Yes. Responses are 100% confidential and are reviewed by University Library staff only to improve library spaces and services.</p>
+        </div>
+      </div>
+      <div class="lp-faq-item">
+        <h3>
+          <button type="button" class="lp-faq-btn" id="faq-q2" aria-expanded="false" aria-controls="faq-a2">
+            What can I give feedback about?
+            <span class="lp-faq-sign" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="lp-faq-panel" id="faq-a2" role="region" aria-labelledby="faq-q2" hidden>
+          <p>Any of these library services: {% for service in services %}{% if forloop.last and not forloop.first %}and {% endif %}{{ service.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+        </div>
+      </div>
+      <div class="lp-faq-item">
+        <h3>
+          <button type="button" class="lp-faq-btn" id="faq-q3" aria-expanded="false" aria-controls="faq-a3">
+            Who reads my feedback?
+            <span class="lp-faq-sign" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="lp-faq-panel" id="faq-a3" role="region" aria-labelledby="faq-q3" hidden>
+          <p>Library staff review responses through a sentiment monitoring dashboard that groups feedback by category and sentiment.</p>
+        </div>
+      </div>
+      <div class="lp-faq-item">
+        <h3>
+          <button type="button" class="lp-faq-btn" id="faq-q4" aria-expanded="false" aria-controls="faq-a4">
+            How is my feedback sorted?
+            <span class="lp-faq-sign" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="lp-faq-panel" id="faq-a4" role="region" aria-labelledby="faq-q4" hidden>
+          <p>Each response is classified as positive, neutral, or negative using sentiment analysis, so urgent concerns can be addressed first.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. CTA banner (closes the page, just above the footer) -->
+<section class="lp-section lp-cta-wrap" aria-labelledby="cta-title" data-reveal>
+  <div class="lp-container">
+    <div class="lp-cta">
+      <div class="lp-glow lp-glow-green lp-cta-glow-1" aria-hidden="true"></div>
+      <div class="lp-glow lp-glow-green lp-cta-glow-2" aria-hidden="true"></div>
+      <div class="lp-cta-inner">
+        <img class="lp-cta-logo" src="{% static 'img/lfs-logo.svg' %}" alt="" width="72" height="72">
+        <h2 id="cta-title" class="lp-h2">Help shape a better library.</h2>
+        <p>Every response helps the ISU Cauayan University Library improve its spaces and services.</p>
+        <a class="lp-btn lp-btn-white" href="{% url 'feedback_step' %}">
+          Give Feedback
+          <svg class="lp-icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg>
+        </a>
       </div>
     </div>
   </div>
 </section>
 {% endblock content %}
 
-{% block footer %}{% endblock footer %}
+{% block footer %}
+<footer class="lp-footer" id="about">
+  <div class="lp-container">
+    <div class="lp-footer-info">
+      <p class="lp-footer-brand">
+        <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Cauayan Library Feedback System logo" width="56" height="56">
+        <span>Library Feedback System</span>
+      </p>
+      <p>University Library · Isabela State University – Cauayan Campus</p>
+      {% if library_email %}
+      <p>Get in touch: <a href="mailto:{{ library_email }}">{{ library_email }}</a></p>
+      {% endif %}
+    </div>
+    <p class="lp-footer-bar">© 2026 Isabela State University – Cauayan Campus. All rights reserved.</p>
+  </div>
+</footer>
+{% endblock footer %}
+
+{% block extra_js %}
+<script src="{% static 'js/landing.js' %}?v={% now 'U' %}" defer></script>
+{% endblock extra_js %}

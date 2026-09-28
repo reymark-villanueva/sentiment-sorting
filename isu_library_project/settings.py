@@ -135,3 +135,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # plain Django admin login skin.
 LOGIN_URL = 'staff_login'
 LOGIN_REDIRECT_URL = 'admin_dashboard'
+
+# Public contact address shown in the landing page footer ("Get in touch").
+# Leave blank to hide that line.
+LIBRARY_CONTACT_EMAIL = ''

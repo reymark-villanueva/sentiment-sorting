@@ -13,16 +13,23 @@
   <!-- Institutional Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  {% block fonts %}
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+  {% endblock fonts %}
 
   <!-- Vanilla CSS Design System -->
+  {% block styles %}
   <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
+  {% endblock styles %}
 
   {% block extra_head %}{% endblock %}
 </head>
 <body>
 
+  {% block header %}{% endblock header %}
+
   <!-- Django Messages Framework Alert Support -->
+  {% block messages %}
   {% if messages %}
   <div class="isu-container isu-messages">
     {% for message in messages %}
@@ -32,9 +39,10 @@
     {% endfor %}
   </div>
   {% endif %}
+  {% endblock messages %}
 
   <!-- Main Body Content Block -->
-  <main>
+  <main id="main">
     {% block content %}
     <!-- Sub-templates inject page content here -->
     {% endblock content %}
