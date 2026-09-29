@@ -37,17 +37,17 @@ document.addEventListener('DOMContentLoaded', () => {
   [0, 50, 100].forEach((pct) => {
     svg.appendChild(el('line', {
       x1: X_START, y1: yAt(pct), x2: X_END, y2: yAt(pct),
-      stroke: pct === 0 ? '#e2ece7' : '#f0f4f2', 'stroke-width': pct === 0 ? 1.2 : 1,
+      stroke: pct === 0 ? '#E4DDCC' : '#EFE9DC', 'stroke-width': pct === 0 ? 1.2 : 1,
     }));
     svg.appendChild(el('text', {
-      x: X_START - 8, y: yAt(pct) + 4, 'font-size': 10, fill: '#849990', 'text-anchor': 'end',
+      x: X_START - 8, y: yAt(pct) + 4, 'font-size': 10, fill: '#66736A', 'text-anchor': 'end',
     })).textContent = `${pct}%`;
   });
 
   // X axis labels
   points.forEach((p, i) => {
     svg.appendChild(el('text', {
-      x: xAt(i), y: 170, 'font-size': 10, fill: '#849990', 'text-anchor': 'middle',
+      x: xAt(i), y: 170, 'font-size': 10, fill: '#66736A', 'text-anchor': 'middle',
     })).textContent = p.label;
   });
 
@@ -65,9 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  drawSeries('positive', getComputedColor('--color-positive', '#3d8758'), 3);
-  drawSeries('neutral', getComputedColor('--color-neutral-sentiment', '#ffcd09'), 2.5);
-  drawSeries('negative', getComputedColor('--color-negative', '#ef4444'), 2.2);
+  drawSeries('positive', getComputedColor('--color-positive', '#0B5A3A'), 3);
+  drawSeries('neutral', getComputedColor('--color-neutral-sentiment', '#D9A02B'), 2.5);
+  drawSeries('negative', getComputedColor('--color-negative', '#B42318'), 2.2);
 
   function getComputedColor(varName, fallback) {
     const value = getComputedStyle(document.documentElement).getPropertyValue(varName);
