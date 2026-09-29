@@ -4,6 +4,7 @@ Feedback & Admin Sentiment Dashboard Views
 """
 
 import csv
+import logging
 import math
 from datetime import timedelta
 
@@ -21,14 +22,16 @@ from .aspects import aspects_by_service_id
 from .forms import FeedbackForm
 from .models import FeedbackLog, LibraryService
 
+logger = logging.getLogger(__name__)
+
 DONUT_RADIUS = 38
 DONUT_CIRCUMFERENCE = 2 * math.pi * DONUT_RADIUS  # ≈ 238.8, matches the dashboard SVG r=38
 
 RANGE_WINDOWS = {
     '7days': timedelta(days=7),
     '30days': timedelta(days=30),
-    'semester': timedelta(days=180),
 }
+RANGE_FILE_LABELS = {'7days': 'Last_7_Days', '30days': 'Last_30_Days'}
 
 
 def _is_ajax(request):
@@ -50,6 +53,33 @@ def _sentiment_breakdown(queryset):
     neu_pct = round(neutral / total * 100, 1)
     neg_pct = round(negative / total * 100, 1)
     return total, positive, neutral, negative, pos_pct, neu_pct, neg_pct
+
+
+def _attach_model_labels(logs):
+    """Set NB / DT predictions on each FeedbackLog in `logs` (a list).
+
+    Re-classifies each comment with the hybrid model's two sub-models, so staff
+    can compare Naive Bayes and the Decision Tree against the saved sentiment.
+    Sets `nb_label` / `dt_label` (capitalized to match FeedbackLog.sentiment,
+    e.g. 'Negative') and `nb_confidence` / `dt_confidence` (whole percentages).
+    Returns the hybrid's NB confidence threshold as a whole percentage, or None
+    if there was nothing to classify or the model can't be loaded (the labels
+    then stay None and the dashboard still renders).
+    """
+    for log in logs:
+        log.nb_label = log.dt_label = log.nb_confidence = log.dt_confidence = None
+    if not logs:
+        return None
+    try:
+        result = ml.component_predictions([log.comment for log in logs])
+    except Exception:
+        logger.exception("Could not compute Naive Bayes / Decision Tree predictions")
+        return None
+    for log, prediction in zip(logs, result['rows']):
+        (nb_label, nb_conf), (dt_label, dt_conf) = prediction['nb'], prediction['dt']
+        log.nb_label, log.nb_confidence = nb_label.capitalize(), round(nb_conf * 100)
+        log.dt_label, log.dt_confidence = dt_label.capitalize(), round(dt_conf * 100)
+    return round(result['threshold'] * 100)
 
 
 def home(request):
@@ -253,6 +283,8 @@ def admin_dashboard(request):
         recent_qs = recent_qs.filter(service=selected_service)
     paginator = Paginator(recent_qs, 10)
     page_obj = paginator.get_page(request.GET.get('page'))
+    feedback_logs = list(page_obj.object_list)
+    nb_threshold_pct = _attach_model_labels(feedback_logs)  # only this page's rows are re-classified
 
     context = {
         'range_param': range_param,
@@ -278,7 +310,8 @@ def admin_dashboard(request):
         'key_insight': key_insight,
         'trend_points': trend_points,
         'page_obj': page_obj,
-        'feedback_logs': page_obj.object_list,
+        'feedback_logs': feedback_logs,
+        'nb_threshold_pct': nb_threshold_pct,
         'active_nav': 'sentiment',
     }
     return render(request, 'admin/dashboard.html', context)
@@ -297,7 +330,7 @@ def feedback_resolve(request, pk):
 
 @staff_member_required(login_url='staff_login')
 def admin_export_report(request):
-    """Export the currently filtered feedback logs as a CSV report."""
+    """Export the currently filtered feedback logs as a CSV report (opens in Excel)."""
     range_param = request.GET.get('range', '30days')
     if range_param not in RANGE_WINDOWS:
         range_param = '30days'
@@ -309,15 +342,19 @@ def admin_export_report(request):
     if service_param.isdigit():
         logs = logs.filter(service_id=service_param)
 
-    response = HttpResponse(content_type='text/csv')
-    filename = f"ISU_Cauayan_Library_Sentiment_Report_{range_param}.csv"
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    filename = f"ISU_Cauayan_Library_Sentiment_Report_{RANGE_FILE_LABELS[range_param]}.csv"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    # UTF-8 byte-order mark: without it Excel assumes the local ANSI code page
+    # and garbles characters like "✓ Resolved" or an em dash.
+    response.write('﻿')
 
     writer = csv.writer(response)
     writer.writerow(['Timestamp', 'Service', 'Sentiment', 'Comment', 'Action', 'Resolved'])
     for log in logs:
         writer.writerow([
-            log.timestamp.strftime('%Y-%m-%d %H:%M'),
+            # Local time (TIME_ZONE), matching the dashboard — not the stored UTC.
+            timezone.localtime(log.timestamp).strftime('%Y-%m-%d %H:%M'),
             log.service.name,
             log.sentiment,
             log.comment,

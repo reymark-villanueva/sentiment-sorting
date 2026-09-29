@@ -58,16 +58,32 @@ def preprocess(text):
 sys.modules['__main__'].Hybrid = Hybrid
 
 
+MODEL_FILE = 'sentiment_model.pkl'
+VECTORIZER_FILE = 'vectorizer.pkl'
+
 _model = None
 _vectorizer = None
+_loaded_mtimes = None
+
+
+def _file_mtimes():
+    """Modification times of the model + vectorizer files."""
+    return tuple((settings.BASE_DIR / name).stat().st_mtime_ns for name in (MODEL_FILE, VECTORIZER_FILE))
 
 
 def _load():
-    """Lazily load and cache the model + vectorizer (loaded once per process)."""
-    global _model, _vectorizer
-    if _model is None or _vectorizer is None:
-        _model = joblib.load(settings.BASE_DIR / 'sentiment_model.pkl')
-        _vectorizer = joblib.load(settings.BASE_DIR / 'vectorizer.pkl')
+    """Load and cache the model + vectorizer, reloading them whenever the .pkl files change.
+
+    Without the mtime check, a retrained model dropped into the project would be
+    ignored until the server restarted (runserver only restarts on .py changes),
+    so new feedback would silently keep being classified by the old model.
+    """
+    global _model, _vectorizer, _loaded_mtimes
+    mtimes = _file_mtimes()
+    if _model is None or _vectorizer is None or mtimes != _loaded_mtimes:
+        _model = joblib.load(settings.BASE_DIR / MODEL_FILE)
+        _vectorizer = joblib.load(settings.BASE_DIR / VECTORIZER_FILE)
+        _loaded_mtimes = mtimes
     return _model, _vectorizer
 
 
@@ -78,3 +94,33 @@ def classify(text):
     features = vectorizer.transform([cleaned])
     label = model.predict(features)[0]
     return str(label).lower()
+
+
+def _label_and_confidence(classifier, features):
+    """(label, confidence) per row: the most probable class and its probability (0-1)."""
+    proba = classifier.predict_proba(features)
+    best = proba.argmax(axis=1)
+    return [(str(classifier.classes_[i]).lower(), float(p[i])) for i, p in zip(best, proba)]
+
+
+def component_predictions(texts):
+    """Label each text with the hybrid's two sub-models separately.
+
+    Returns {'threshold': float | None, 'rows': [...]}, where each row is
+    {'nb': (label, confidence), 'dt': (label, confidence)} for one text, with
+    lower-case labels and confidence as a 0-1 probability. For Naive Bayes
+    that's its predicted class probability; for the Decision Tree it's the
+    class share in the leaf the text lands in. `threshold` is the NB
+    confidence the hybrid requires before trusting NB over the Decision Tree.
+    `classify()` gives the hybrid's final answer.
+    """
+    if not texts:
+        return {'threshold': None, 'rows': []}
+    model, vectorizer = _load()
+    features = vectorizer.transform([preprocess(t) for t in texts])
+    nb = _label_and_confidence(model.nb_, features)
+    dt = _label_and_confidence(model.dt_, features)
+    return {
+        'threshold': model.threshold,
+        'rows': [{'nb': nb_row, 'dt': dt_row} for nb_row, dt_row in zip(nb, dt)],
+    }

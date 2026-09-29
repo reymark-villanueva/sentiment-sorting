@@ -1,0 +1,12 @@
+{% comment %}
+Sentiment label pill.
+Usage: {% include "admin/_sentiment_pill.html" with sentiment=row.sentiment %}
+`sentiment` is 'Positive', 'Neutral' or 'Negative' (anything else renders as Negative).
+{% endcomment %}
+{% if sentiment == 'Positive' %}
+  <span class="isu-status-pill isu-status-success">Positive</span>
+{% elif sentiment == 'Neutral' %}
+  <span class="isu-status-pill isu-status-warning">Neutral</span>
+{% else %}
+  <span class="isu-status-pill isu-status-danger">Negative</span>
+{% endif %}

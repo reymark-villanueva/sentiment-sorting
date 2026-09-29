@@ -20,7 +20,6 @@
     <div class="isu-pill-tabs">
       <a href="?range=7days&service={{ service_param }}" class="isu-pill-tab {% if range_param == '7days' %}active{% endif %}">7 Days</a>
       <a href="?range=30days&service={{ service_param }}" class="isu-pill-tab {% if range_param == '30days' %}active{% endif %}">30 Days</a>
-      <a href="?range=semester&service={{ service_param }}" class="isu-pill-tab {% if range_param == 'semester' %}active{% endif %}">This Semester</a>
     </div>
 
     <!-- Service Filter: narrows both the breakdown table and Recent Feedback
@@ -137,7 +136,7 @@
     <div class="isu-donut-wrap">
       <div class="isu-donut-container">
         <svg viewBox="0 0 100 100" width="100%" height="100%" style="transform: rotate(-90deg);">
-          <circle cx="50" cy="50" r="38" fill="none" stroke="#eef3f0" stroke-width="12"/>
+          <circle cx="50" cy="50" r="38" fill="none" stroke="#EFE9DC" stroke-width="12"/>
           <circle cx="50" cy="50" r="38" fill="none" stroke="var(--color-positive)" stroke-width="12"
                   stroke-dasharray="{{ donut.pos_dash }} {{ donut.circumference }}" stroke-dashoffset="0"/>
           <circle cx="50" cy="50" r="38" fill="none" stroke="var(--color-neutral-sentiment)" stroke-width="12"
@@ -326,6 +325,9 @@
           Continuous stream of student and faculty reviews with direct administrative escalation triggers.
         {% endif %}
       </p>
+      <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 4px;">
+        Sentiment is the hybrid model's final result. NB &amp; DT Results show how the Naive Bayes and Decision Tree models each classify the same feedback, with each model's confidence.{% if nb_threshold_pct %} The hybrid uses Naive Bayes when it is at least {{ nb_threshold_pct }}% confident, and the Decision Tree otherwise.{% endif %}
+      </p>
     </div>
     <span class="isu-table-tag" style="background-color: var(--color-mint-subtle); color: var(--color-deep-green);">
       {{ page_obj.paginator.count }} Total Entries
@@ -340,6 +342,7 @@
           <th>Target Service</th>
           <th>Sentiment</th>
           <th style="min-width: 260px;">Student Feedback Extract</th>
+          <th><abbr title="Naive Bayes">NB</abbr> &amp; <abbr title="Decision Tree">DT</abbr> Results</th>
         </tr>
       </thead>
       <tbody>
@@ -359,27 +362,40 @@
           </td>
 
           <td>
-            {% if row.sentiment == 'Positive' %}
-              <span class="isu-status-pill isu-status-success">Positive</span>
-            {% elif row.sentiment == 'Neutral' %}
-              <span class="isu-status-pill isu-status-warning">Neutral</span>
-            {% else %}
-              <span class="isu-status-pill isu-status-danger">Negative</span>
-            {% endif %}
+            {% include "admin/_sentiment_pill.html" with sentiment=row.sentiment %}
           </td>
 
           <td style="font-size: 0.8125rem; color: var(--color-text-body); font-style: italic;">
             "{{ row.comment|default:"No written remarks provided." }}"
           </td>
+
+          <td>
+            {% if row.nb_label %}
+            <div class="isu-model-stack">
+              <div class="isu-model-line">
+                <span class="isu-model-tag" title="Naive Bayes">NB</span>
+                {% include "admin/_sentiment_pill.html" with sentiment=row.nb_label %}
+                <span class="isu-model-pct" title="Naive Bayes confidence">{{ row.nb_confidence }}%</span>
+              </div>
+              <div class="isu-model-line">
+                <span class="isu-model-tag" title="Decision Tree">DT</span>
+                {% include "admin/_sentiment_pill.html" with sentiment=row.dt_label %}
+                <span class="isu-model-pct" title="Decision Tree confidence">{{ row.dt_confidence }}%</span>
+              </div>
+            </div>
+            {% else %}
+            <span style="font-size: 0.8125rem; color: var(--color-text-muted);">Unavailable</span>
+            {% endif %}
+          </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="4">
+          <td colspan="5">
             <div class="isu-empty-state">
               <svg class="isu-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
               </svg>
-              <h4 style="font-family: var(--font-serif); font-size: 1.1rem; color: var(--color-deep-green); margin-bottom: 4px;">No Feedback Logs Found</h4>
+              <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--color-heading); margin-bottom: 4px;">No Feedback Logs Found</h4>
               <p style="font-size: 0.8125rem;">
                 {% if selected_service %}
                   No evaluations recorded yet for {{ selected_service.name }}.

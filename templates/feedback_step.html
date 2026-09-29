@@ -9,13 +9,13 @@
 
     <!-- Compact Top Bar with 3-Step Progress Indicator -->
     <div class="isu-progress-bar-card">
-      <div class="isu-progress-brand">
-        <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Logo" class="isu-progress-logo">
+      <a class="isu-progress-brand" href="{% url 'home' %}">
+        <img src="{% static 'img/lfs-logo.svg' %}" alt="ISU Cauayan Library Feedback System logo" class="isu-progress-logo">
         <div>
-          <div class="isu-progress-brand-title">ISU Cauayan Library</div>
-          <div style="font-size: 0.6875rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Feedback Survey</div>
+          <div class="isu-progress-brand-title">ISU Cauayan</div>
+          <div class="isu-progress-brand-sub">Library Feedback System</div>
         </div>
-      </div>
+      </a>
 
       <!-- 3-Step Progress Stepper -->
       <ol class="isu-stepper">

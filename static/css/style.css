@@ -1,80 +1,70 @@
-/* Institutional typography (Inter + Source Serif 4) is loaded via <link> tags
-   in base.html / admin/base_admin.html <head>, not @import, to avoid a
+/* Typography (Newsreader + Hanken Grotesk) is loaded via <link> tags in
+   base.html / admin/base_admin.html <head>, not @import, to avoid a
    render-blocking CSS import. */
 
 /* ==========================================================================
    ISABELA STATE UNIVERSITY - CAUAYAN CAMPUS LIBRARY
-   Vanilla CSS Design System & Theme
+   Vanilla CSS Design System & Theme — feedback wizard, staff login, admin
    ========================================================================== */
 
 :root {
-  /* Brand Palette — sourced from the "lfs" Coolors palette:
-     #3d8758 (sea green) · #075538 (deep forest) · #096d3f (primary green)
-     #f0f7f3 (mint white) · #ffcd09 (gold). Tokens without a direct swatch
-     (the *-light/-dark hover and text-contrast shades) are derived by
-     blending two adjacent palette colors, so every green in the system
-     still traces back to one of the five source swatches. */
-  --color-deep-green: #096d3f;
-  --color-deep-green-dark: #075538;
-  --color-deep-green-light: #237a4b;
-  /* --color-emerald is the palette's sea-green (#3d8758) darkened ~20% toward
-     the deep-forest swatch — it's used as body-size link/text color
-     throughout (a { color }, eyebrow labels, etc.), and the raw swatch only
-     hits 4.37:1 on white, just under WCAG AA's 4.5:1 for normal text. This
-     shade clears 5.0:1 while staying visibly the same palette green. */
-  --color-emerald: #327d52;
-  --color-emerald-light: #5b9775;
-  --color-soft-mint: #e4f0ea;
-  --color-mint-subtle: #f0f7f3;
+  /* Brand palette — shared with the landing page (static/css/landing.css)
+     and taken from the logo: deep green, gold, and ivory/white. */
+  --color-deep-green: #0A3F2A;       /* primary buttons, active states */
+  --color-deep-green-dark: #07301F;  /* primary hover */
+  --color-deep-green-light: #0B5A3A;
+  --color-emerald: #0B5A3A;          /* icons, links, text accents (8.6:1 on white) */
+  --color-soft-mint: #E6EEE8;        /* logo-green tint: selected / active fills */
+  --color-mint-subtle: #F2F5F1;      /* lighter tint: hover fills */
+  --color-gold: #D9A02B;             /* accent rings and indicators */
+  --color-gold-soft: #EFD9A4;
+  --color-chip: #F2EEE3;             /* neutral chips / quiet panels */
 
   /* Neutrals */
-  --color-bg: #f8faf9;
+  --color-bg: #FBF8F1;               /* ivory page background */
   --color-surface: #ffffff;
-  --color-surface-elevated: #ffffff;
-  --color-border: #dbe5e0;
-  --color-border-light: #ebf2ef;
+  --color-border: #E4DDCC;
+  --color-border-light: #EFE9DC;
 
   /* Typography Colors */
-  --color-text-main: #142820;
-  --color-text-body: #344840;
-  --color-text-muted: #5e746b;
-  --color-text-light: #849990;
+  --color-heading: #0A2A1C;
+  --color-text-main: #14231B;
+  --color-text-body: #2F3D35;
+  --color-text-muted: #4F5E55;
+  --color-text-light: #66736A;       /* 4.9:1 on white, 4.6:1 on ivory */
 
-  /* Accents (no swatch in the palette for these — left as-is) */
-  --color-red: #dc2626;
-  --color-red-light: #fee2e2;
-  --color-blue: #2563eb;
-  --color-blue-light: #eff6ff;
+  /* Accents */
+  --color-red: #B42318;
+  --color-red-light: #FBEAE8;
 
-  /* Sentiment Status Colors (donut/trend charts, stat card icons, legends).
-     Positive reuses the palette's greens; Neutral is the palette's gold
-     swatch directly — a genuine green/gold/red traffic-light trio drawn
-     entirely from the given palette instead of an unrelated amber. */
-  --color-positive: #3d8758;
-  --color-positive-dark: #096d3f;
-  --color-positive-light: #ecf3ee;
-  --color-neutral-sentiment: #ffcd09;
-  --color-neutral-sentiment-dark: #8a6a00;
-  --color-neutral-sentiment-light: #fff8d9;
-  --color-negative: #ef4444;
-  --color-negative-dark: #dc2626;
-  --color-negative-light: #fee2e2;
+  /* Sentiment Status Colors (donut/trend charts, stat card icons, legends):
+     logo green / logo gold / a deep red. */
+  --color-positive: #0B5A3A;
+  --color-positive-dark: #0A3F2A;
+  --color-positive-light: #E6F0EA;
+  --color-neutral-sentiment: #D9A02B;
+  --color-neutral-sentiment-dark: #7A5A10;
+  --color-neutral-sentiment-light: #FBF1D9;
+  --color-negative: #B42318;
+  --color-negative-dark: #8E1B12;
+  --color-negative-light: #FBEAE8;
 
   /* Typography */
-  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* Geometry & Shadows */
   --radius-xs: 6px;
   --radius-sm: 10px;
+  --radius-btn: 12px;
   --radius-md: 16px;
   --radius-lg: 20px;
   --radius-xl: 24px;
   --radius-pill: 9999px;
 
-  --shadow-subtle: 0 1px 3px rgba(9, 109, 63, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-card: 0 4px 18px rgba(9, 109, 63, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
-  --shadow-elevated: 0 14px 34px rgba(9, 109, 63, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-subtle: 0 1px 2px rgba(10, 42, 28, 0.05);
+  --shadow-card: 0 1px 2px rgba(10, 42, 28, 0.06), 0 12px 32px -8px rgba(10, 42, 28, 0.12);
+  --shadow-elevated: 0 20px 44px -16px rgba(10, 42, 28, 0.3);
 
   /* Layout */
   --sidebar-width: 270px;
@@ -132,6 +122,18 @@ img, svg {
   max-width: 100%;
 }
 
+/* Stroke icons use round caps/joins (as on the landing page). This also makes
+   the zero-length "dot" lines in the service icons visible. */
+svg {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-emerald);
+  outline-offset: 3px;
+}
+
 /* Base Container */
 .isu-container {
   width: 100%;
@@ -142,206 +144,25 @@ img, svg {
   padding-right: 24px;
 }
 
-.isu-admin-badge {
-  font-size: 0.75rem;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  background-color: var(--color-soft-mint);
-  color: var(--color-deep-green);
-  font-weight: 600;
-  border: 1px solid var(--color-emerald);
-}
-
-/* ==========================================================================
-   HERO SECTION (home.html)
-   ========================================================================== */
-.isu-hero-section {
-  position: relative;
-  isolation: isolate; /* own stacking context, so .isu-hero-photo/-overlay/-content z-index stays local */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  /* .isu-hero-brand used to be position:absolute, pinned to a fixed top
-     offset with no awareness of .isu-container's own (separately) centered
-     height — on some viewport heights the two would overlap. Normal flow
-     with a gap between them guarantees they can never collide, at any
-     logo size, on any screen.
-     The gap and padding scale with viewport HEIGHT (dvh), not a fixed px
-     value or a handful of width breakpoints — that's what actually makes
-     the whole stack (title + badge + headline + lead + CTA + note) fit a
-     short mobile screen and a tall desktop one from the same rule, instead
-     of guessing sizes per device class. */
-  gap: clamp(16px, 3dvh, 40px);
-  /* The hero is the entire home page now (everything else lives past "Give
-     Feedback") and there's no header anymore, so it fills the full viewport —
-     a single full-bleed fold, matching the reference rather than a fixed
-     card height.
-     100vh is measured against the LARGEST possible mobile viewport (address
-     bar hidden) — on first load, with the address bar visible, the real
-     visible area is shorter, so a plain 100vh hero overflows it and the
-     whole page scrolls. 100dvh tracks the actual current viewport instead.
-     min-height (not height+overflow:hidden) is deliberate: if some viewport
-     is shorter than this design was budgeted for, content gracefully grows
-     the page a little rather than getting silently clipped/hidden. */
-  min-height: 100vh; /* fallback for browsers without dvh support */
-  min-height: 100dvh;
-  padding: clamp(20px, 4dvh, 64px) 0;
-  overflow: hidden;
-  background-color: var(--color-deep-green-dark); /* shows briefly while the photo loads */
-}
-
-/* The campus photo — sharp, not blurred. */
-.isu-hero-photo {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-/* Flat dark green wash over the photo so white text stays legible —
-   a single translucent color, not a gradient. */
-.isu-hero-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  /* rgb() equivalent of --color-deep-green-dark (#075538) — hardcoded because
-     rgba() can't take a hex custom property directly, so this has to be kept
-     in sync by hand whenever the palette changes. */
-  background-color: rgba(7, 85, 56, 0.6);
-}
-
-/* Title + logo badge, top of the hero's centered content stack. Normal flow
-   (not position:absolute) — sits above .isu-container with a gap between
-   them, so at any badge size the two can never overlap, on any viewport
-   height. Sizes scale with viewport height (dvh) with a min/max floor and
-   ceiling via clamp(), so this fits a short mobile screen and a tall
-   desktop one without separate per-breakpoint overrides. */
-.isu-hero-brand {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(10px, 1.6dvh, 16px);
-  padding: 0 24px; /* edge safety on narrow phones — scoped to this block only */
-  margin-top: clamp(-28px, -3dvh, -14px); /* nudge the brand block (and the rest of the stack with it) up a little */
-}
-
-/* White circle behind the logo, "2x2 photo" sized (2x the linear size of the
-   previous "1x1" pass) — the emblem's own artwork has no background (see
-   static/img/lfs-logo.svg), so this is what actually gives it a backing
-   against the dark photo. overflow:hidden so the logo clips cleanly to the
-   circle instead of its square bounding corners poking past the curve. */
-.isu-hero-brand-badge {
-  width: clamp(152px, 22dvh, 232px);
-  height: clamp(152px, 22dvh, 232px);
-  border-radius: 50%;
-  overflow: hidden;
-  background-color: #ffffff;
-  box-shadow: var(--shadow-elevated);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.isu-hero-brand-logo {
-  width: 82%;
-  height: 82%;
-  object-fit: contain;
-}
-
-.isu-hero-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  max-width: 640px;
-  margin: 0 auto; /* center the whole block within the full-width section, not just its own items */
-}
-
-.isu-hero-headline {
-  font-family: var(--font-serif);
-  font-size: 2.875rem;
-  font-weight: 700;
-  line-height: 1.22; /* +0.07 over the base 1.15 — light text on dark needs the extra room */
-  color: #ffffff;
-  margin-bottom: 20px;
-  letter-spacing: -0.02em;
-}
-
-.isu-hero-lead {
-  font-size: 0.9375rem; /* body-text size, was 1.125rem — read as too large */
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.86);
-  margin-bottom: 28px;
-  max-width: 480px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.isu-hero-note {
-  margin-top: 24px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.78);
-}
-
-.isu-hero-note svg {
-  color: #ffffff;
-  flex-shrink: 0;
-}
-
-.isu-hero-cta-group {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
 .isu-btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
+  min-height: 48px;
   background-color: var(--color-deep-green);
   color: #ffffff !important;
   font-weight: 600;
   font-size: 1rem;
-  padding: 14px 28px;
-  border-radius: var(--radius-pill);
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(9, 109, 63, 0.25);
+  padding: 12px 26px;
+  border-radius: var(--radius-btn);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid transparent;
 }
 
 .isu-btn-primary:hover {
-  background-color: var(--color-deep-green-light);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(9, 109, 63, 0.32);
-}
-
-/* White-pill / green-text variant — scoped to .isu-btn-primary.isu-btn-on-photo
-   specifically (currently just the hero's "Give Feedback" button) so it
-   doesn't repaint the wizard/login/confirmation buttons elsewhere that sit
-   on white cards, where a white pill would have no contrast against the page. */
-.isu-btn-primary.isu-btn-on-photo {
-  background-color: #ffffff;
-  color: var(--color-deep-green) !important;
-  box-shadow: 0 4px 14px rgba(7, 85, 56, 0.35);
-}
-
-.isu-btn-primary.isu-btn-on-photo:hover {
-  background-color: var(--color-mint-subtle);
-  color: var(--color-deep-green-dark) !important;
-  box-shadow: 0 6px 18px rgba(7, 85, 56, 0.4);
+  background-color: var(--color-deep-green-dark);
+  box-shadow: 0 8px 20px -8px rgba(10, 63, 42, 0.6);
 }
 
 .isu-btn-secondary {
@@ -349,19 +170,19 @@ img, svg {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background-color: transparent;
-  color: var(--color-deep-green) !important;
+  min-height: 48px;
+  background-color: var(--color-surface);
+  color: var(--color-heading) !important;
   font-weight: 600;
-  font-size: 0.95rem;
-  padding: 13px 24px;
-  border-radius: var(--radius-pill);
-  border: 1.5px solid var(--color-border);
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  padding: 12px 24px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--color-border);
+  transition: border-color 0.2s ease;
 }
 
 .isu-btn-secondary:hover {
-  border-color: var(--color-emerald);
-  background-color: var(--color-mint-subtle);
+  border-color: #CFC6B1;
 }
 
 .isu-btn-icon {
@@ -381,7 +202,7 @@ img, svg {
    ========================================================================== */
 .isu-footer {
   margin-top: auto;
-  background-color: var(--color-surface);
+  background-color: var(--color-bg);
   border-top: 1px solid var(--color-border);
   padding: 28px 0;
   text-align: center;
@@ -418,7 +239,7 @@ img, svg {
    ========================================================================== */
 .isu-feedback-layout {
   min-height: calc(100vh - 100px);
-  background-color: var(--color-soft-mint);
+  background-color: var(--color-bg);
   padding: 40px 16px 64px;
   display: flex;
   flex-direction: column;
@@ -450,17 +271,42 @@ img, svg {
   gap: 12px;
 }
 
-.isu-progress-logo {
-  width: 36px;
-  height: 36px;
+.isu-progress-brand {
+  color: var(--color-heading);
+  text-decoration: none;
 }
 
-.isu-progress-brand-title {
-  font-family: var(--font-serif);
-  font-size: 0.9375rem;
+/* Logos sit on a white circle with a hairline ring, as on the landing page. */
+.isu-progress-logo,
+.isu-admin-brand-logo,
+.isu-footer-logo,
+.isu-logo-disc {
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.isu-progress-logo {
+  width: 44px;
+  height: 44px;
+}
+
+/* Brand lockup: "ISU CAUAYAN" over "Library Feedback System" (matches the landing header). */
+.isu-progress-brand-title,
+.isu-admin-brand-name {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
   font-weight: 700;
-  color: var(--color-deep-green);
-  line-height: 1.1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-heading);
+  line-height: 1.2;
+}
+
+.isu-progress-brand-sub {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.2;
 }
 
 .isu-stepper {
@@ -486,12 +332,12 @@ img, svg {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #eef3f0;
+  background-color: var(--color-surface);
   color: var(--color-text-muted);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.75rem;
   transition: all 0.2s ease;
-  border: 1.5px solid transparent;
+  border: 1.5px solid var(--color-border);
 }
 
 .isu-step-item.active {
@@ -503,17 +349,17 @@ img, svg {
   background-color: var(--color-deep-green);
   color: #ffffff;
   border-color: var(--color-deep-green);
-  box-shadow: 0 0 0 3px rgba(9, 109, 63, 0.15);
+  box-shadow: 0 0 0 3px rgba(10, 63, 42, 0.15);
 }
 
 .isu-step-item.completed {
-  color: var(--color-emerald);
+  color: var(--color-heading);
 }
 
 .isu-step-item.completed .isu-step-number {
-  background-color: var(--color-soft-mint);
-  color: var(--color-emerald);
-  border-color: var(--color-emerald);
+  background-color: var(--color-neutral-sentiment-light);
+  color: var(--color-heading);
+  border-color: var(--color-gold);
 }
 
 .isu-step-line {
@@ -524,7 +370,7 @@ img, svg {
 }
 
 .isu-step-line.completed {
-  background-color: var(--color-emerald);
+  background-color: var(--color-gold);
 }
 
 /* Feedback Card Container */
@@ -544,10 +390,10 @@ img, svg {
 .isu-feedback-title {
   font-family: var(--font-serif);
   font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-deep-green);
+  font-weight: 500;
+  color: var(--color-heading);
   margin-bottom: 6px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 .isu-feedback-subtitle {
@@ -562,7 +408,7 @@ img, svg {
   gap: 12px;
   font-size: 1.0625rem;
   font-weight: 600;
-  color: var(--color-deep-green);
+  color: var(--color-heading);
   margin-bottom: 16px;
 }
 
@@ -570,13 +416,14 @@ img, svg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background-color: var(--color-soft-mint);
-  color: var(--color-deep-green);
+  border: 1.5px solid var(--color-gold);
+  color: var(--color-heading);
   font-size: 0.8125rem;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* 8-Item Service Grid */
@@ -692,7 +539,7 @@ img, svg {
 .isu-select:focus {
   outline: none;
   border-color: var(--color-emerald);
-  box-shadow: 0 0 0 3px rgba(22, 117, 90, 0.15);
+  box-shadow: 0 0 0 3px rgba(11, 90, 58, 0.18);
 }
 
 .isu-input {
@@ -727,15 +574,15 @@ img, svg {
 }
 
 .isu-chip.selected {
-  background-color: var(--color-soft-mint);
-  border-color: var(--color-emerald);
-  color: var(--color-deep-green);
+  background-color: var(--color-deep-green);
+  border-color: var(--color-deep-green);
+  color: #ffffff;
   font-weight: 600;
 }
 
 /* Step 4: Review Summary Card */
 .isu-summary-box {
-  background-color: var(--color-mint-subtle);
+  background-color: var(--color-chip);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 24px;
@@ -791,8 +638,9 @@ img, svg {
 .isu-confirm-title {
   font-family: var(--font-serif);
   font-size: 2.25rem;
-  font-weight: 700;
-  color: var(--color-deep-green);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--color-heading);
   margin-bottom: 12px;
 }
 
@@ -833,9 +681,25 @@ img, svg {
    ADMIN CONSOLE (admin/base_admin.html & admin/dashboard.html)
    ========================================================================== */
 .isu-admin-body {
-  background-color: #f4f7f5;
+  /* The staff console uses the clean sans-serif throughout: every heading and
+     metric that asks for --font-serif gets Hanken Grotesk here instead. */
+  --font-serif: var(--font-sans);
+  background-color: var(--color-surface); /* white, same as the sidebar */
   display: flex;
   min-height: 100vh;
+}
+
+/* Sans headings need more weight than the serif's 500 to stand out. */
+.isu-admin-body .isu-chart-title,
+.isu-admin-body .isu-table-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.isu-admin-body .isu-stat-metric,
+.isu-admin-body .isu-donut-center-num {
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 /* Left Sidebar (fixed, dark-on-light) */
@@ -866,8 +730,8 @@ img, svg {
 }
 
 .isu-admin-brand-logo {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
 }
 
@@ -876,20 +740,10 @@ img, svg {
   flex-direction: column;
 }
 
-.isu-admin-brand-name {
-  font-family: var(--font-serif);
-  font-size: 1.0625rem;
-  font-weight: 700;
-  color: var(--color-deep-green);
-  line-height: 1.15;
-}
-
 .isu-admin-brand-tag {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--color-emerald);
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.2;
 }
 
 /* Sidebar Navigation Items */
@@ -942,7 +796,7 @@ img, svg {
   top: 8px;
   bottom: 8px;
   width: 3.5px;
-  background-color: var(--color-deep-green);
+  background-color: var(--color-gold);
   border-radius: 0 4px 4px 0;
 }
 
@@ -961,7 +815,7 @@ img, svg {
 .isu-sidebar-footer {
   padding: 18px 16px;
   border-top: 1px solid var(--color-border-light);
-  background-color: #fafcfb;
+  background-color: var(--color-surface);
 }
 
 .isu-user-card {
@@ -1048,7 +902,7 @@ img, svg {
   display: none;
   position: fixed;
   inset: 0;
-  background-color: rgba(9, 109, 63, 0.4);
+  background-color: rgba(10, 42, 28, 0.45);
   z-index: 140;
 }
 
@@ -1146,11 +1000,12 @@ img, svg {
   justify-content: space-between;
 }
 
+/* Same deep-green gradient as the landing page's dark panels (green shades only). */
 .isu-stat-card.accent-deep-green {
-  background-color: var(--color-deep-green);
-  border-color: var(--color-deep-green-dark);
+  background: linear-gradient(150deg, var(--color-deep-green-light) 0%, var(--color-deep-green) 55%, var(--color-heading) 100%);
+  border-color: var(--color-heading);
   color: #ffffff;
-  box-shadow: 0 6px 20px rgba(9, 109, 63, 0.22);
+  box-shadow: 0 12px 28px -12px rgba(10, 42, 28, 0.5);
 }
 
 .isu-stat-card-header {
@@ -1167,7 +1022,7 @@ img, svg {
 }
 
 .isu-stat-card.accent-deep-green .isu-stat-card-title {
-  color: var(--color-soft-mint);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .isu-stat-card-icon {
@@ -1182,15 +1037,16 @@ img, svg {
 }
 
 .isu-stat-card.accent-deep-green .isu-stat-card-icon {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: #fef08a;
+  background-color: rgba(255, 255, 255, 0.14);
+  color: var(--color-gold-soft);
 }
 
 .isu-stat-metric {
   font-family: var(--font-serif);
   font-size: 2.25rem;
-  font-weight: 700;
-  color: var(--color-deep-green);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--color-heading);
   line-height: 1.1;
   margin-bottom: 6px;
 }
@@ -1212,7 +1068,7 @@ img, svg {
 }
 
 .isu-stat-card.accent-deep-green .isu-stat-footer {
-  color: #e2f0ea;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .isu-trend-badge {
@@ -1236,8 +1092,8 @@ img, svg {
 }
 
 .isu-trend-negative {
-  background-color: #fee2e2;
-  color: #b91c1c;
+  background-color: var(--color-negative-light);
+  color: var(--color-negative-dark);
 }
 
 /* ==========================================================================
@@ -1272,8 +1128,9 @@ img, svg {
 .isu-chart-title {
   font-family: var(--font-serif);
   font-size: 1.1875rem;
-  font-weight: 700;
-  color: var(--color-deep-green);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--color-heading);
 }
 
 .isu-donut-wrap {
@@ -1305,8 +1162,9 @@ img, svg {
 .isu-donut-center-num {
   font-family: var(--font-serif);
   font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--color-deep-green);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--color-heading);
   line-height: 1;
 }
 
@@ -1332,7 +1190,7 @@ img, svg {
   font-size: 0.8125rem;
   padding: 4px 8px;
   border-radius: var(--radius-xs);
-  background-color: #fafcfb;
+  background-color: var(--color-bg);
 }
 
 .isu-legend-left {
@@ -1418,8 +1276,9 @@ img, svg {
 .isu-table-title {
   font-family: var(--font-serif);
   font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-deep-green);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--color-heading);
 }
 
 .isu-table-tag {
@@ -1467,7 +1326,51 @@ img, svg {
 }
 
 .isu-table tr:hover td {
-  background-color: #fafcfb;
+  background-color: #FDFBF6;
+}
+
+/* NB & DT Results column (Recent Feedback Logs): one line per model, a model
+   tag followed by that model's sentiment pill. */
+.isu-model-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.isu-model-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.isu-model-tag {
+  min-width: 30px;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-chip);
+  color: var(--color-heading);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  cursor: help;
+}
+
+/* Same-width pills so the confidence numbers line up in a column. */
+.isu-model-line .isu-status-pill {
+  min-width: 78px;
+  justify-content: center;
+}
+
+.isu-model-pct {
+  min-width: 36px;
+  text-align: right;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-body);
 }
 
 /* Stacked column of small status pills (Sentiment Breakdown column) */
@@ -1493,25 +1396,25 @@ img, svg {
 .isu-status-success {
   background-color: var(--color-positive-light);
   color: var(--color-positive-dark);
-  border: 1px solid #94bda3;
+  border: 1px solid #BCD5C5;
 }
 
 .isu-status-warning {
   background-color: var(--color-neutral-sentiment-light);
   color: var(--color-neutral-sentiment-dark);
-  border: 1px solid #ffe271;
+  border: 1px solid #EBCB7F;
 }
 
 .isu-status-danger {
-  background-color: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background-color: var(--color-negative-light);
+  color: var(--color-negative-dark);
+  border: 1px solid #F1C4BE;
 }
 
 .isu-status-neutral {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-chip);
+  color: var(--color-text-body);
+  border: 1px solid var(--color-border);
 }
 
 /* Empty state fallback */
@@ -1615,10 +1518,6 @@ img, svg {
 }
 
 @media (max-width: 768px) {
-  .isu-hero-headline {
-    font-size: 2.25rem;
-  }
-
   .isu-service-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1654,37 +1553,9 @@ img, svg {
   }
 }
 
-@media (max-width: 480px) {
-  /* The headline's <br> forces "Help Us Improve Your" / "Library Experience"
-     onto two lines by design, but at 2.25rem that first line doesn't fit
-     under ~420px — it still wraps safely (no overflow), just into an
-     unintended 3rd/4th line. Sized down so the intended 2-line shape holds.
-     (This is a WIDTH-based fix for the <br>-forced line wrap; the badge/
-     title/section spacing above is HEIGHT-based via dvh clamp() instead,
-     since that's what actually varies for "does it fit the screen". Both
-     are needed — they're solving different axes of the same viewport.) */
-  .isu-hero-headline {
-    font-size: 1.875rem;
-  }
-}
-
 @media (max-width: 540px) {
   .isu-stat-cards-grid {
     grid-template-columns: 1fr;
-  }
-
-  .isu-hero-cta-group {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  /* Scoped to the hero CTA group specifically — a bare `.isu-btn-primary,
-     .isu-btn-secondary { width: 100% }` here would also stretch the feedback
-     wizard's footer buttons and the confirmation screen's buttons, which
-     share a row with another button and shouldn't be forced full-width. */
-  .isu-hero-cta-group .isu-btn-primary,
-  .isu-hero-cta-group .isu-btn-secondary {
-    width: 100%;
   }
 
   .isu-form-footer {
