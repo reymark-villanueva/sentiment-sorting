@@ -47,9 +47,11 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-For any real deployment, set `DJANGO_SECRET_KEY` in the environment (and turn `DEBUG` off in
-`isu_library_project/settings.py`); the app refuses to start with `DEBUG` off and no key. After
-pulling an update, run `python manage.py migrate` first.
+For any real deployment, set `DJANGO_SECRET_KEY` (and turn `DEBUG` off in
+`isu_library_project/settings.py`); the app refuses to start with `DEBUG` off and no key. Put it in a
+`.env` file in the project root (copy `.env.example`; `.env` is git-ignored) or in the real
+environment, which takes priority. After pulling an update, run `pip install -r requirements.txt` and
+`python manage.py migrate` first.
 
 Visit:
 - `/` — public portal
