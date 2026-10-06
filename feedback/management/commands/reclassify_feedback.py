@@ -39,11 +39,7 @@ class Command(BaseCommand):
                 f"{log.sentiment} -> {new_sentiment} | {log.comment[:60]!r}"
             )
             if apply:
-                # Only refresh the action label if staff haven't changed or resolved it.
-                auto_label = log.compute_action_label()
                 log.sentiment = new_sentiment
-                if not log.is_action_resolved and log.action_label == auto_label:
-                    log.action_label = log.compute_action_label()
                 log.save()  # save() also recomputes sentiment_priority
 
         total = logs.count()

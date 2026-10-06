@@ -15,11 +15,12 @@
   <!-- Date Range Controls, Service Filter & Export Button -->
   <div class="isu-admin-controls">
     <!-- Date Range Selector: real server-side filters via query params.
-         Each link carries &service=... too, so switching the date range
-         doesn't silently drop the current service filter. -->
+         Each link carries &service=... and &date=... too, so switching the
+         date range doesn't silently drop the current service or end date. -->
     <div class="isu-pill-tabs">
-      <a href="?range=7days&service={{ service_param }}" class="isu-pill-tab {% if range_param == '7days' %}active{% endif %}">7 Days</a>
-      <a href="?range=30days&service={{ service_param }}" class="isu-pill-tab {% if range_param == '30days' %}active{% endif %}">30 Days</a>
+      <a href="?range=week&service={{ service_param }}&date={{ date_param }}" class="isu-pill-tab {% if range_param == 'week' %}active{% endif %}" title="Last 7 days, or the whole week you pick">Weekly</a>
+      <a href="?range=month&service={{ service_param }}&date={{ date_param }}" class="isu-pill-tab {% if range_param == 'month' %}active{% endif %}" title="Last 30 days, or the whole month you pick">Monthly</a>
+      <a href="?range=year&service={{ service_param }}&date={{ date_param }}" class="isu-pill-tab {% if range_param == 'year' %}active{% endif %}" title="Last 365 days, or the whole year you pick">Yearly</a>
     </div>
 
     <!-- Service Filter: narrows both the breakdown table and Recent Feedback
@@ -30,6 +31,7 @@
       class="isu-input"
       style="width: auto; padding: 8px 32px 8px 14px;"
       data-current-range="{{ range_param }}"
+      data-current-date="{{ date_param }}"
       aria-label="Filter by library service">
       <option value="" {% if not service_param %}selected{% endif %}>All Services</option>
       {% for service in all_services %}
@@ -37,10 +39,28 @@
       {% endfor %}
     </select>
 
-    <input type="date" class="isu-date-input" value="{% now 'Y-m-d' %}" aria-label="Report generated on" readonly>
+    <!-- Calendar date picker: pick any year / month / day. The selected tab
+         decides the span: Weekly shows that day's whole week, Monthly its whole
+         month, Yearly its whole year. Clearing it goes back to the rolling last
+         7/30/365 days. Navigates via admin.js, preserving the current range and
+         service filter. -->
+    <input
+      type="date"
+      id="reportDateInput"
+      class="isu-date-input"
+      value="{% if date_param %}{{ report_date }}{% endif %}"
+      min="{{ earliest_report_date }}"
+      max="{% now 'Y-m-d' %}"
+      data-current-range="{{ range_param }}"
+      data-current-service="{{ service_param }}"
+      aria-label="Pick a date"
+      title="Pick a day to see its whole week, month or year (depending on the tab)">
+    <span class="isu-period-label" style="font-size: 0.8125rem; color: var(--color-text-muted); white-space: nowrap;">
+      Showing: <strong>{{ period_label }}</strong>
+    </span>
 
     <!-- Export Report: real CSV download of the currently filtered logs -->
-    <a class="isu-btn-export" href="{% url 'admin_export_report' %}?range={{ range_param }}&service={{ service_param }}">
+    <a class="isu-btn-export" href="{% url 'admin_export_report' %}?range={{ range_param }}&service={{ service_param }}&date={{ date_param }}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="7 10 12 15 17 10"></polyline>
@@ -413,11 +433,11 @@
     {% if page_obj.paginator.num_pages > 1 %}
     <div class="isu-pagination">
       {% if page_obj.has_previous %}
-        <a href="?range={{ range_param }}&service={{ service_param }}&page={{ page_obj.previous_page_number }}" class="isu-btn-link">&larr; Prev</a>
+        <a href="?range={{ range_param }}&service={{ service_param }}&date={{ date_param }}&page={{ page_obj.previous_page_number }}" class="isu-btn-link">&larr; Prev</a>
       {% endif %}
       <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
       {% if page_obj.has_next %}
-        <a href="?range={{ range_param }}&service={{ service_param }}&page={{ page_obj.next_page_number }}" class="isu-btn-link">Next &rarr;</a>
+        <a href="?range={{ range_param }}&service={{ service_param }}&date={{ date_param }}&page={{ page_obj.next_page_number }}" class="isu-btn-link">Next &rarr;</a>
       {% endif %}
     </div>
     {% endif %}

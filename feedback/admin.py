@@ -17,8 +17,8 @@ class LibraryServiceAdmin(admin.ModelAdmin):
 
 @admin.register(FeedbackLog)
 class FeedbackLogAdmin(admin.ModelAdmin):
-    list_display = ('service', 'sentiment', 'sentiment_priority', 'action_label', 'is_action_resolved', 'timestamp')
-    list_filter = ('sentiment', 'service', 'is_action_resolved')
+    list_display = ('service', 'sentiment', 'sentiment_priority', 'timestamp')
+    list_filter = ('sentiment', 'service')
     search_fields = ('comment', 'service__name')
     date_hierarchy = 'timestamp'
     readonly_fields = ('sentiment', 'sentiment_priority', 'timestamp')

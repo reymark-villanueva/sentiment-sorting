@@ -32,10 +32,44 @@ document.addEventListener('DOMContentLoaded', () => {
   const serviceFilterSelect = document.getElementById('serviceFilterSelect');
   if (serviceFilterSelect) {
     serviceFilterSelect.addEventListener('change', () => {
-      const range = serviceFilterSelect.dataset.currentRange || '30days';
+      const range = serviceFilterSelect.dataset.currentRange || 'month';
       const service = serviceFilterSelect.value;
-      window.location.href = `?range=${encodeURIComponent(range)}&service=${encodeURIComponent(service)}`;
+      const date = serviceFilterSelect.dataset.currentDate || '';
+      window.location.href = `?range=${encodeURIComponent(range)}&service=${encodeURIComponent(service)}&date=${encodeURIComponent(date)}`;
     });
+  }
+
+  // 2b. Report End Date — reload with ?date=<yyyy-mm-dd>, preserving the range
+  // and service filter. Picking from the calendar applies straight away, but
+  // while typing the browser fires `change` on every keystroke that happens to
+  // form a valid date (day "1" on the way to "15"), so typed dates only apply
+  // on Enter or when the field loses focus.
+  const reportDateInput = document.getElementById('reportDateInput');
+  if (reportDateInput) {
+    let typing = false;
+
+    function applyReportDate() {
+      // Out-of-range or half-typed dates are left for the user to finish;
+      // an emptied field means "back to today".
+      if (!reportDateInput.checkValidity()) return;
+      if (reportDateInput.value === reportDateInput.defaultValue) return;
+      const range = reportDateInput.dataset.currentRange || 'month';
+      const service = reportDateInput.dataset.currentService || '';
+      window.location.href = `?range=${encodeURIComponent(range)}&service=${encodeURIComponent(service)}&date=${encodeURIComponent(reportDateInput.value)}`;
+    }
+
+    reportDateInput.addEventListener('pointerdown', () => { typing = false; });
+    reportDateInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        applyReportDate();
+      } else if (event.key !== 'Tab') {
+        typing = true;
+      }
+    });
+    reportDateInput.addEventListener('change', () => {
+      if (!typing) applyReportDate();
+    });
+    reportDateInput.addEventListener('blur', applyReportDate);
   }
 
   // 3. Sidebar scrollspy — Sentiment Dashboard / Service Insights / Feedback Logs

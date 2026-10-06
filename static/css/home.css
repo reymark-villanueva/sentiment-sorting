@@ -1,0 +1,142 @@
+/* Public home page: full-viewport campus-photo hero with a single
+   "Give Feedback" button. Loaded after style.css (tokens, .isu-container,
+   .isu-btn-primary). */
+
+.isu-hero-section {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 3dvh, 40px);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(20px, 4dvh, 64px) 0;
+  overflow: hidden;
+  background-color: var(--color-deep-green-dark);
+}
+
+.isu-hero-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Flat dark green wash (rgb of --color-deep-green) so white text stays legible. */
+.isu-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: rgba(7, 85, 56, 0.6);
+}
+
+.isu-hero-brand {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 24px;
+}
+
+.isu-hero-brand-badge {
+  width: clamp(152px, 22dvh, 232px);
+  height: clamp(152px, 22dvh, 232px);
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #ffffff;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.isu-hero-brand-logo {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+}
+
+.isu-hero-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.isu-hero-headline {
+  font-family: var(--font-serif);
+  font-size: 2.875rem;
+  font-weight: 700;
+  line-height: 1.22;
+  color: #ffffff;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+
+.isu-hero-lead {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0 auto 28px;
+  max-width: 480px;
+}
+
+.isu-hero-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* White pill with green text, for contrast against the photo. */
+.isu-btn-primary.isu-btn-on-photo {
+  background-color: #ffffff;
+  color: var(--color-deep-green) !important;
+  border-radius: var(--radius-pill);
+  padding: 14px 28px;
+  box-shadow: 0 4px 14px rgba(7, 48, 31, 0.35);
+}
+
+.isu-btn-primary.isu-btn-on-photo:hover {
+  background-color: var(--color-mint-subtle);
+  color: var(--color-deep-green-dark) !important;
+  box-shadow: 0 6px 18px rgba(7, 48, 31, 0.4);
+}
+
+.isu-hero-note {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.isu-hero-note svg {
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .isu-hero-headline { font-size: 2.25rem; }
+}
+
+@media (max-width: 480px) {
+  .isu-hero-headline { font-size: 1.875rem; }
+}
+
+@media (max-width: 540px) {
+  .isu-hero-cta-group { flex-direction: column; width: 100%; }
+  .isu-hero-cta-group .isu-btn-primary { width: 100%; }
+}
