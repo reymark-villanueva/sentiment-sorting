@@ -34,5 +34,4 @@ urlpatterns = [
     # Staff Admin Sentiment Console
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin/dashboard/export/', views.admin_export_report, name='admin_export_report'),
-    path('admin/feedback/<int:pk>/resolve/', views.feedback_resolve, name='feedback_resolve'),
 ]

@@ -78,30 +78,12 @@ class FeedbackLog(models.Model):
         editable=False,
         help_text="Sort key derived from sentiment: negative=0, neutral=1, positive=2.",
     )
-    action_label = models.CharField(
-        max_length=60,
-        blank=True,
-        default="Under Review",
-        help_text="Administrative action, e.g. Create IT Ticket, ✓ Commended, Work Order Sent.",
-    )
-    is_action_resolved = models.BooleanField(default=False)
     timestamp = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['sentiment_priority', '-timestamp']
         verbose_name = "Feedback Log"
         verbose_name_plural = "Feedback Logs"
-
-    def compute_action_label(self):
-        """Suggest an administrative action based on the classified sentiment and service."""
-        if self.sentiment == self.Sentiment.POSITIVE:
-            return "✓ Commended"
-        if self.sentiment == self.Sentiment.NEGATIVE:
-            service_name = self.service.name if self.service_id else ''
-            if 'Wi-Fi' in service_name or 'Internet' in service_name or 'Computer' in service_name:
-                return "Create IT Ticket"
-            return "Work Order Sent"
-        return "Under Review"
 
     def save(self, *args, **kwargs):
         # The view sets self.sentiment from the trained model (feedback.ml.classify)
@@ -110,11 +92,6 @@ class FeedbackLog(models.Model):
         if not self.sentiment:
             self.sentiment = self.Sentiment.NEUTRAL
         self.sentiment_priority = self.SENTIMENT_PRIORITY.get(self.sentiment, 1)
-        # Only auto-suggest an action label when the log is first created;
-        # afterwards staff may change it (e.g. via the dashboard resolve action)
-        # without it being silently overwritten on every subsequent save().
-        if self.pk is None:
-            self.action_label = self.compute_action_label()
         super().save(*args, **kwargs)
 
     def __str__(self):

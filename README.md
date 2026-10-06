@@ -26,7 +26,7 @@ templates/
 static/
 ├── css/style.css           # Design system (CSS custom properties)
 ├── js/feedback.js          # Feedback wizard controller
-├── js/admin.js              # Sidebar toggle + resolve-action AJAX
+├── js/admin.js              # Sidebar toggle, filters, scrollspy
 ├── js/dashboard-charts.js  # Renders the sentiment trend line chart from real bucketed data
 └── img/                    # logo.svg, library_hero.svg
 ```

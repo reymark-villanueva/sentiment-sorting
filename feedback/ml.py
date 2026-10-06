@@ -16,6 +16,7 @@ import sys
 import joblib
 from django.conf import settings
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.tree import DecisionTreeClassifier
 
@@ -24,15 +25,27 @@ SENTIMENT_PRIORITY = {'negative': 0, 'neutral': 1, 'positive': 2}
 
 
 class Hybrid(BaseEstimator, ClassifierMixin):
-    """Naive Bayes primary classifier with a Decision Tree fallback for low-confidence predictions."""
+    """Naive Bayes primary classifier with a Decision Tree fallback for low-confidence predictions.
 
-    def __init__(self, threshold=0.9):
+    Naive Bayes is probability-calibrated (so its confidence is meaningful) and the tree needs
+    `min_samples_leaf` rows per leaf (so its leaves are not all pure). Only predict() runs in the
+    app; fit() mirrors the notebook so this class stays an exact copy of it.
+    """
+
+    def __init__(self, threshold=0.9, nb_alpha=0.3, calibration=None, max_depth=None, min_samples_leaf=2):
         self.threshold = threshold
+        self.nb_alpha = nb_alpha
+        self.calibration = calibration
+        self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
 
     def fit(self, X, y):
-        self.nb_ = MultinomialNB(alpha=0.3).fit(X, y)
+        nb = MultinomialNB(alpha=self.nb_alpha)
+        self.nb_ = nb if self.calibration is None else CalibratedClassifierCV(nb, method=self.calibration, cv=5)
+        self.nb_.fit(X, y)
         self.dt_ = DecisionTreeClassifier(
-            class_weight='balanced', min_samples_leaf=2, random_state=42
+            class_weight='balanced', max_depth=self.max_depth,
+            min_samples_leaf=self.min_samples_leaf, random_state=42,
         ).fit(X, y)
         return self
 
@@ -88,12 +101,20 @@ def _load():
 
 
 def classify(text):
-    """Predict a sentiment label ('negative' / 'neutral' / 'positive') for free text."""
+    """Predict a sentiment label ('negative' / 'neutral' / 'positive') for free text.
+
+    This is the single place that turns text into a label: the form view and the
+    `resentiment` command both call it. It uses the trained hybrid's own
+    predict() (Naive Bayes when it is at least `threshold` confident, otherwise
+    the Decision Tree), exactly as validated in the notebook. Do not replace it
+    with a "highest percentage wins" comparison of the two sub-models: the tree's
+    figure is a tiny leaf's class share (often exactly 100%), not a probability
+    comparable to Naive Bayes', and that rule flipped clearly negative feedback
+    to positive.
+    """
     model, vectorizer = _load()
-    cleaned = preprocess(text)
-    features = vectorizer.transform([cleaned])
-    label = model.predict(features)[0]
-    return str(label).lower()
+    features = vectorizer.transform([preprocess(text)])
+    return str(model.predict(features)[0]).lower()
 
 
 def _label_and_confidence(classifier, features):

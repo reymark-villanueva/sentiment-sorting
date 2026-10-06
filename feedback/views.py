@@ -6,15 +6,16 @@ Feedback & Admin Sentiment Dashboard Views
 import csv
 import logging
 import math
-from datetime import timedelta
+import re
+from datetime import date, datetime, time, timedelta
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from . import ml
@@ -27,11 +28,115 @@ logger = logging.getLogger(__name__)
 DONUT_RADIUS = 38
 DONUT_CIRCUMFERENCE = 2 * math.pi * DONUT_RADIUS  # ≈ 238.8, matches the dashboard SVG r=38
 
+DEFAULT_RANGE = 'month'
+RANGE_ALIASES = {'7days': 'week', '30days': 'month', '365days': 'year'}  # older bookmarked links
+# With no date chosen, each range is a rolling window ending now.
 RANGE_WINDOWS = {
-    '7days': timedelta(days=7),
-    '30days': timedelta(days=30),
+    'week': timedelta(days=7),
+    'month': timedelta(days=30),
+    'year': timedelta(days=365),
 }
-RANGE_FILE_LABELS = {'7days': 'Last_7_Days', '30days': 'Last_30_Days'}
+RANGE_FILE_LABELS = {'week': 'Last_7_Days', 'month': 'Last_30_Days', 'year': 'Last_365_Days'}
+EARLIEST_REPORT_DATE = date(2000, 1, 1)  # matches the date picker's min; keeps window math in range
+
+
+def _aware_midnight(day):
+    return timezone.make_aware(datetime.combine(day, time.min))
+
+
+def _parse_picker_value(raw):
+    """Parse ?date=: a plain date (what the date picker sends), or a week (2026-W41),
+    month (2026-10) or year (2026) from hand-made links.
+
+    Returns a date, or None if `raw` is blank or malformed.
+    """
+    raw = (raw or '').strip()
+    try:
+        if match := re.fullmatch(r'(\d{4})-W(\d{2})', raw):
+            return date.fromisocalendar(int(match[1]), int(match[2]), 1)
+        if match := re.fullmatch(r'(\d{4})-(\d{2})', raw):
+            return date(int(match[1]), int(match[2]), 1)
+        if re.fullmatch(r'\d{4}', raw):
+            return date(int(raw), 1, 1)
+        return parse_date(raw)
+    except ValueError:  # well-formed but impossible, e.g. 2026-02-30 or week 60
+        return None
+
+
+def _calendar_period(range_param, day):
+    """(first day, first day of the next period) of the calendar week / month / year containing `day`."""
+    if range_param == 'week':  # Monday-Sunday, like the browser's week picker
+        first = day - timedelta(days=day.weekday())
+        return first, first + timedelta(days=7)
+    if range_param == 'month':
+        first = day.replace(day=1)
+        return first, (first + timedelta(days=32)).replace(day=1)
+    return date(day.year, 1, 1), date(day.year + 1, 1, 1)
+
+
+def _report_window(request):
+    """Resolve ?range= and ?date= into the reporting window and the one before it.
+
+    With no date chosen, the window is the rolling last 7 / 30 / 365 days ending
+    now. When staff pick a day in the calendar, the window is the whole calendar
+    week / month / year (per the selected tab) containing that day, up to now if
+    that period is still running, so choosing a month shows every entry of that
+    month, not only that day. A malformed date counts as none; a future one is
+    clamped to today.
+
+    Returns a dict: range_param, calendar (bool), report_date (the picked day, or
+    today), date_param ('' for the rolling window), since, until, previous_since,
+    previous_until, file_label, ends_now and period_label.
+    """
+    range_param = request.GET.get('range', DEFAULT_RANGE)
+    range_param = RANGE_ALIASES.get(range_param, range_param)
+    if range_param not in RANGE_WINDOWS:
+        range_param = DEFAULT_RANGE
+
+    now = timezone.now()
+    today = timezone.localdate(now)
+    picked = _parse_picker_value(request.GET.get('date'))
+
+    if picked is None:
+        window = RANGE_WINDOWS[range_param]
+        report_date, date_param, file_label = today, '', RANGE_FILE_LABELS[range_param]
+        period_label = {'week': 'Last 7 days', 'month': 'Last 30 days', 'year': 'Last 365 days'}[range_param]
+        since, until = now - window, now
+        previous_since, previous_until = since - window, since
+        ends_now = True
+    else:
+        picked = max(min(picked, today), EARLIEST_REPORT_DATE)
+        first, after = _calendar_period(range_param, picked)
+        report_date, date_param = picked, picked.isoformat()
+        previous_first, _ = _calendar_period(range_param, first - timedelta(days=1))
+        since, until = _aware_midnight(first), min(_aware_midnight(after), now)
+        previous_since, previous_until = _aware_midnight(previous_first), since
+        ends_now = _aware_midnight(after) > now
+        file_label = {
+            'week': f"Week_of_{first}",
+            'month': f"Month_{first:%Y-%m}",
+            'year': f"Year_{first.year}",
+        }[range_param]
+        last = after - timedelta(days=1)
+        period_label = {
+            'week': f"{first:%b} {first.day} – {last:%b} {last.day}, {last.year}",
+            'month': f"{first:%B %Y}",
+            'year': f"{first.year}",
+        }[range_param]
+
+    return {
+        'range_param': range_param,
+        'calendar': picked is not None,
+        'report_date': report_date,
+        'date_param': date_param,
+        'since': since,
+        'until': until,
+        'previous_since': previous_since,
+        'previous_until': previous_until,
+        'file_label': file_label,
+        'ends_now': ends_now,
+        'period_label': period_label,
+    }
 
 
 def _is_ajax(request):
@@ -83,11 +188,8 @@ def _attach_model_labels(logs):
 
 
 def home(request):
-    """Public landing page."""
-    return render(request, 'home.html', {
-        'services': LibraryService.objects.filter(is_active=True),
-        'library_email': settings.LIBRARY_CONTACT_EMAIL,
-    })
+    """Public landing page: hero headline, CTA, and visual only."""
+    return render(request, 'home.html')
 
 
 def feedback_step(request):
@@ -143,10 +245,9 @@ def feedback_submit(request):
 @staff_member_required(login_url='staff_login')
 def admin_dashboard(request):
     """Staff-only real-time student sentiment monitoring dashboard."""
-    range_param = request.GET.get('range', '30days')
-    if range_param not in RANGE_WINDOWS:
-        range_param = '30days'
-    window = RANGE_WINDOWS[range_param]
+    period = _report_window(request)
+    range_param, date_param = period['range_param'], period['date_param']
+    since, until = period['since'], period['until']
 
     # Service filter — shared by both the "Sentiment Breakdown by Library
     # Service" table and "Recent Feedback Logs" below, so selecting e.g.
@@ -159,12 +260,10 @@ def admin_dashboard(request):
     if not selected_service:
         service_param = ''  # missing/non-numeric/stale id -> fall back to "All Services"
 
-    now = timezone.now()
-    since = now - window
-    previous_since = since - window
-
-    logs_qs = FeedbackLog.objects.filter(timestamp__gte=since)
-    previous_qs = FeedbackLog.objects.filter(timestamp__gte=previous_since, timestamp__lt=since)
+    logs_qs = FeedbackLog.objects.filter(timestamp__gte=since, timestamp__lt=until)
+    previous_qs = FeedbackLog.objects.filter(
+        timestamp__gte=period['previous_since'], timestamp__lt=period['previous_until']
+    )
 
     total, positive, neutral, negative, pos_pct, neu_pct, neg_pct = _sentiment_breakdown(logs_qs)
 
@@ -259,7 +358,8 @@ def admin_dashboard(request):
 
     # Trend chart: split the selected window into 6 buckets
     bucket_count = 6
-    bucket_length = window / bucket_count
+    bucket_length = (until - since) / bucket_count
+    last_label = 'Today' if period['ends_now'] else timezone.localtime(until - timedelta(seconds=1)).strftime('%b %d')
     trend_points = []
     for i in range(bucket_count):
         bucket_start = since + bucket_length * i
@@ -267,7 +367,7 @@ def admin_dashboard(request):
         bucket_qs = FeedbackLog.objects.filter(timestamp__gte=bucket_start, timestamp__lt=bucket_end)
         b_total, _, _, _, b_pos, b_neu, b_neg = _sentiment_breakdown(bucket_qs)
         trend_points.append({
-            'label': 'Today' if i == bucket_count - 1 else bucket_end.strftime('%b %d'),
+            'label': last_label if i == bucket_count - 1 else timezone.localtime(bucket_end).strftime('%b %d'),
             'positive': b_pos,
             'neutral': b_neu,
             'negative': b_neg,
@@ -276,9 +376,8 @@ def admin_dashboard(request):
 
     # Recent feedback log stream (independent of the date-range filter, but
     # respects the same service filter as the breakdown table above),
-    # paginated. Relies on FeedbackLog.Meta.ordering (sentiment_priority,
-    # then -timestamp) so negative feedback surfaces first.
-    recent_qs = FeedbackLog.objects.select_related('service').all()
+    # paginated, newest first regardless of sentiment.
+    recent_qs = FeedbackLog.objects.select_related('service').order_by('-timestamp', '-pk')
     if selected_service:
         recent_qs = recent_qs.filter(service=selected_service)
     paginator = Paginator(recent_qs, 10)
@@ -288,6 +387,10 @@ def admin_dashboard(request):
 
     context = {
         'range_param': range_param,
+        'date_param': date_param,
+        'report_date': period['report_date'].isoformat(),
+        'earliest_report_date': EARLIEST_REPORT_DATE.isoformat(),
+        'period_label': period['period_label'],
         'service_param': service_param,
         'selected_service': selected_service,
         'all_services': all_services,
@@ -318,24 +421,12 @@ def admin_dashboard(request):
 
 
 @staff_member_required(login_url='staff_login')
-@require_POST
-def feedback_resolve(request, pk):
-    """AJAX endpoint: mark a feedback log's administrative action as resolved."""
-    log = get_object_or_404(FeedbackLog, pk=pk)
-    log.is_action_resolved = True
-    log.action_label = "✓ Resolved"
-    log.save(update_fields=['is_action_resolved', 'action_label'])
-    return JsonResponse({'status': 'success', 'action_label': log.action_label})
-
-
-@staff_member_required(login_url='staff_login')
 def admin_export_report(request):
     """Export the currently filtered feedback logs as a CSV report (opens in Excel)."""
-    range_param = request.GET.get('range', '30days')
-    if range_param not in RANGE_WINDOWS:
-        range_param = '30days'
-    since = timezone.now() - RANGE_WINDOWS[range_param]
-    logs = FeedbackLog.objects.select_related('service').filter(timestamp__gte=since)
+    period = _report_window(request)
+    logs = FeedbackLog.objects.select_related('service').filter(
+        timestamp__gte=period['since'], timestamp__lt=period['until']
+    )
 
     # Same service filter as the dashboard, so exporting matches what's on screen.
     service_param = request.GET.get('service', '')
@@ -343,14 +434,14 @@ def admin_export_report(request):
         logs = logs.filter(service_id=service_param)
 
     response = HttpResponse(content_type='text/csv; charset=utf-8')
-    filename = f"ISU_Cauayan_Library_Sentiment_Report_{RANGE_FILE_LABELS[range_param]}.csv"
+    filename = f"ISU_Cauayan_Library_Sentiment_Report_{period['file_label']}.csv"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     # UTF-8 byte-order mark: without it Excel assumes the local ANSI code page
-    # and garbles characters like "✓ Resolved" or an em dash.
+    # and garbles characters like an em dash.
     response.write('﻿')
 
     writer = csv.writer(response)
-    writer.writerow(['Timestamp', 'Service', 'Sentiment', 'Comment', 'Action', 'Resolved'])
+    writer.writerow(['Timestamp', 'Service', 'Sentiment', 'Comment'])
     for log in logs:
         writer.writerow([
             # Local time (TIME_ZONE), matching the dashboard — not the stored UTC.
@@ -358,7 +449,5 @@ def admin_export_report(request):
             log.service.name,
             log.sentiment,
             log.comment,
-            log.action_label,
-            'Yes' if log.is_action_resolved else 'No',
         ])
     return response

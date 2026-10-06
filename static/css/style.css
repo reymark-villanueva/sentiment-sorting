@@ -1,74 +1,91 @@
-/* Typography (Newsreader + Hanken Grotesk) is loaded via <link> tags in
-   base.html / admin/base_admin.html <head>, not @import, to avoid a
+/* Institutional typography (Inter + Source Serif 4) is loaded via <link> tags
+   in base.html / admin/base_admin.html <head>, not @import, to avoid a
    render-blocking CSS import. */
 
 /* ==========================================================================
    ISABELA STATE UNIVERSITY - CAUAYAN CAMPUS LIBRARY
-   Vanilla CSS Design System & Theme — feedback wizard, staff login, admin
+   Vanilla CSS Design System & Theme
    ========================================================================== */
 
 :root {
-  /* Brand palette — shared with the landing page (static/css/landing.css)
-     and taken from the logo: deep green, gold, and ivory/white. */
-  --color-deep-green: #0A3F2A;       /* primary buttons, active states */
-  --color-deep-green-dark: #07301F;  /* primary hover */
-  --color-deep-green-light: #0B5A3A;
-  --color-emerald: #0B5A3A;          /* icons, links, text accents (8.6:1 on white) */
-  --color-soft-mint: #E6EEE8;        /* logo-green tint: selected / active fills */
-  --color-mint-subtle: #F2F5F1;      /* lighter tint: hover fills */
-  --color-gold: #D9A02B;             /* accent rings and indicators */
-  --color-gold-soft: #EFD9A4;
-  --color-chip: #F2EEE3;             /* neutral chips / quiet panels */
+  /* Brand Palette — sourced from the "lfs" Coolors palette:
+     #3d8758 (sea green) · #075538 (deep forest) · #096d3f (primary green)
+     #f0f7f3 (mint white) · #ffcd09 (gold). Tokens without a direct swatch
+     (the *-light/-dark hover and text-contrast shades) are derived by
+     blending two adjacent palette colors, so every green in the system
+     still traces back to one of the five source swatches. */
+  --color-deep-green: #096d3f;
+  --color-deep-green-dark: #075538;
+  --color-deep-green-light: #237a4b;
+  /* --color-emerald is the palette's sea-green (#3d8758) darkened ~20% toward
+     the deep-forest swatch — it's used as body-size link/text color
+     throughout (a { color }, eyebrow labels, etc.), and the raw swatch only
+     hits 4.37:1 on white, just under WCAG AA's 4.5:1 for normal text. This
+     shade clears 5.0:1 while staying visibly the same palette green. */
+  --color-emerald: #327d52;
+  --color-emerald-light: #5b9775;
+  --color-soft-mint: #e4f0ea;
+  --color-mint-subtle: #f0f7f3;
 
   /* Neutrals */
-  --color-bg: #FBF8F1;               /* ivory page background */
+  --color-bg: #f8faf9;
   --color-surface: #ffffff;
-  --color-border: #E4DDCC;
-  --color-border-light: #EFE9DC;
+  --color-surface-elevated: #ffffff;
+  --color-border: #dbe5e0;
+  --color-border-light: #ebf2ef;
 
   /* Typography Colors */
-  --color-heading: #0A2A1C;
-  --color-text-main: #14231B;
-  --color-text-body: #2F3D35;
-  --color-text-muted: #4F5E55;
-  --color-text-light: #66736A;       /* 4.9:1 on white, 4.6:1 on ivory */
+  --color-text-main: #142820;
+  --color-text-body: #344840;
+  --color-text-muted: #5e746b;
+  --color-text-light: #849990;
 
-  /* Accents */
-  --color-red: #B42318;
-  --color-red-light: #FBEAE8;
+  /* Accents (no swatch in the palette for these — left as-is) */
+  --color-red: #dc2626;
+  --color-red-light: #fee2e2;
+  --color-blue: #2563eb;
+  --color-blue-light: #eff6ff;
 
-  /* Sentiment Status Colors (donut/trend charts, stat card icons, legends):
-     logo green / logo gold / a deep red. */
-  --color-positive: #0B5A3A;
-  --color-positive-dark: #0A3F2A;
-  --color-positive-light: #E6F0EA;
-  --color-neutral-sentiment: #D9A02B;
-  --color-neutral-sentiment-dark: #7A5A10;
-  --color-neutral-sentiment-light: #FBF1D9;
-  --color-negative: #B42318;
-  --color-negative-dark: #8E1B12;
-  --color-negative-light: #FBEAE8;
+  /* Sentiment Status Colors (donut/trend charts, stat card icons, legends).
+     Positive reuses the palette's greens; Neutral is the palette's gold
+     swatch directly — a genuine green/gold/red traffic-light trio drawn
+     entirely from the given palette instead of an unrelated amber. */
+  --color-positive: #3d8758;
+  --color-positive-dark: #096d3f;
+  --color-positive-light: #ecf3ee;
+  --color-neutral-sentiment: #ffcd09;
+  --color-neutral-sentiment-dark: #8a6a00;
+  --color-neutral-sentiment-light: #fff8d9;
+  --color-negative: #ef4444;
+  --color-negative-dark: #dc2626;
+  --color-negative-light: #fee2e2;
 
   /* Typography */
-  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
-  --font-sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   /* Geometry & Shadows */
   --radius-xs: 6px;
   --radius-sm: 10px;
-  --radius-btn: 12px;
   --radius-md: 16px;
   --radius-lg: 20px;
   --radius-xl: 24px;
   --radius-pill: 9999px;
 
-  --shadow-subtle: 0 1px 2px rgba(10, 42, 28, 0.05);
-  --shadow-card: 0 1px 2px rgba(10, 42, 28, 0.06), 0 12px 32px -8px rgba(10, 42, 28, 0.12);
-  --shadow-elevated: 0 20px 44px -16px rgba(10, 42, 28, 0.3);
+  --shadow-subtle: 0 1px 3px rgba(9, 109, 63, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-card: 0 4px 18px rgba(9, 109, 63, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-elevated: 0 14px 34px rgba(9, 109, 63, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
 
   /* Layout */
   --sidebar-width: 270px;
   --container-max: 1200px;
+
+  /* Tokens used by the newer components, expressed in the original palette */
+  --color-heading: #142820;
+  --color-gold: #ffcd09;
+  --color-gold-soft: #ffe98a;
+  --color-chip: #ebf2ef;
+  --radius-btn: 12px;
 }
 
 /* Reset & Box Sizing */
@@ -162,7 +179,7 @@ svg {
 
 .isu-btn-primary:hover {
   background-color: var(--color-deep-green-dark);
-  box-shadow: 0 8px 20px -8px rgba(10, 63, 42, 0.6);
+  box-shadow: 0 8px 20px -8px rgba(9, 109, 63, 0.6);
 }
 
 .isu-btn-secondary {
@@ -182,7 +199,7 @@ svg {
 }
 
 .isu-btn-secondary:hover {
-  border-color: #CFC6B1;
+  border-color: var(--color-emerald);
 }
 
 .isu-btn-icon {
@@ -349,7 +366,7 @@ svg {
   background-color: var(--color-deep-green);
   color: #ffffff;
   border-color: var(--color-deep-green);
-  box-shadow: 0 0 0 3px rgba(10, 63, 42, 0.15);
+  box-shadow: 0 0 0 3px rgba(9, 109, 63, 0.15);
 }
 
 .isu-step-item.completed {
@@ -682,7 +699,7 @@ svg {
    ========================================================================== */
 .isu-admin-body {
   /* The staff console uses the clean sans-serif throughout: every heading and
-     metric that asks for --font-serif gets Hanken Grotesk here instead. */
+     metric that asks for --font-serif gets Inter here instead. */
   --font-serif: var(--font-sans);
   background-color: var(--color-surface); /* white, same as the sidebar */
   display: flex;
@@ -902,7 +919,7 @@ svg {
   display: none;
   position: fixed;
   inset: 0;
-  background-color: rgba(10, 42, 28, 0.45);
+  background-color: rgba(20, 40, 32, 0.45);
   z-index: 140;
 }
 
@@ -1005,7 +1022,7 @@ svg {
   background: linear-gradient(150deg, var(--color-deep-green-light) 0%, var(--color-deep-green) 55%, var(--color-heading) 100%);
   border-color: var(--color-heading);
   color: #ffffff;
-  box-shadow: 0 12px 28px -12px rgba(10, 42, 28, 0.5);
+  box-shadow: 0 12px 28px -12px rgba(20, 40, 32, 0.5);
 }
 
 .isu-stat-card-header {
