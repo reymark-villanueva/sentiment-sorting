@@ -9,8 +9,10 @@ db.sqlite3
 db.sqlite3-journal
 staticfiles/
 media/
+# Local secrets: never commit these. The template (.env.example) is committed on purpose.
 .env
-.env.example
+.env.*
+!.env.example
 
 # Editors / OS
 .DS_Store
