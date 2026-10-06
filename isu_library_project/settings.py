@@ -14,9 +14,14 @@ import os
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load settings from a git-ignored .env file in the project root, if there is one (see
+# .env.example). Real environment variables take priority over the file.
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -26,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Set DJANGO_SECRET_KEY in the environment (generate one with
+# Set DJANGO_SECRET_KEY in the environment or in .env (generate one with
 # `python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"`).
 # Without it, a development-only key is used while DEBUG is on, and the app refuses to
 # start once DEBUG is off, so a deployment can never silently run on a public key.
