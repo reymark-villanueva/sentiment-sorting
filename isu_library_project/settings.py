@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,11 +22,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3a!7%kvxrt=m#d7)3r5i=7bhijul6s^g7(pbfbbpf0-137!r8h'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+# SECURITY WARNING: keep the secret key used in production secret!
+# Set DJANGO_SECRET_KEY in the environment (generate one with
+# `python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"`).
+# Without it, a development-only key is used while DEBUG is on, and the app refuses to
+# start once DEBUG is off, so a deployment can never silently run on a public key.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("Set the DJANGO_SECRET_KEY environment variable.")
+    SECRET_KEY = 'django-insecure-dev-only-key-do-not-use-in-production'
 
 ALLOWED_HOSTS = []
 
