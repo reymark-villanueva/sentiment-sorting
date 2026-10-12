@@ -3,12 +3,18 @@ Isabela State University - Cauayan Campus Library
 Feedback app test suite
 """
 
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 from django.urls import reverse
 
+from . import ml
+from .ml import ModelUnavailable
 from .models import FeedbackLog, LibraryService
 
 User = get_user_model()
@@ -117,6 +123,40 @@ class FeedbackSubmitTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 405)
 
+    @patch('feedback.views.ml.classify', side_effect=ModelUnavailable('missing'))
+    def test_missing_model_ajax_returns_503_and_saves_nothing(self, mock_classify):
+        response = self.client.post(
+            self.url,
+            {'service': self.service.pk, 'comment': 'The wifi needs to be faster.'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()['status'], 'unavailable')
+        self.assertEqual(FeedbackLog.objects.count(), 0)
+
+    @patch('feedback.views.ml.classify', side_effect=ModelUnavailable('missing'))
+    def test_missing_model_standard_post_rerenders_form_with_503(self, mock_classify):
+        response = self.client.post(
+            self.url, {'service': self.service.pk, 'comment': 'The wifi needs to be faster.'}
+        )
+        self.assertEqual(response.status_code, 503)
+        self.assertTemplateUsed(response, 'feedback_step.html')
+        self.assertEqual(FeedbackLog.objects.count(), 0)
+
+
+class MissingModelFilesTests(TestCase):
+    """With no .pkl files, ml raises ModelUnavailable (not a raw FileNotFoundError)."""
+
+    def test_classify_raises_model_unavailable(self):
+        with patch('feedback.ml.settings.BASE_DIR', Path(tempfile.mkdtemp())):
+            with self.assertRaises(ModelUnavailable):
+                ml.classify('anything')
+
+    def test_reclassify_command_fails_with_clear_error(self):
+        with patch('feedback.ml.settings.BASE_DIR', Path(tempfile.mkdtemp())):
+            with self.assertRaises(CommandError):
+                call_command('reclassify_feedback')
+
 
 class ComponentPredictionTests(TestCase):
     """Runs the real sentiment_model.pkl: the hybrid must expose its NB and DT sub-models."""
@@ -173,14 +213,6 @@ class SentimentPredictionTests(TestCase):
         for text, expected, lang in self.samples:
             if expected in self.OPPOSITE:
                 self.assertNotEqual(ml.classify(text), self.OPPOSITE[expected], f"[{lang}] {text!r}")
-
-    def test_confidences_are_not_saturated_at_100_percent(self):
-        """The dashboard's NB & DT percentages must carry information (calibrated NB, leaves of >= 10 rows)."""
-        from . import ml
-        rows = ml.component_predictions([text for text, _, _ in self.samples])['rows']
-        for key, max_share in (('nb', 0.10), ('dt', 0.50)):
-            saturated = sum(row[key][1] >= 0.99 for row in rows) / len(rows)
-            self.assertLessEqual(saturated, max_share, f"{key.upper()} claims >=99% on {saturated:.0%} of samples")
 
     def test_classify_is_the_trained_hybrids_own_prediction(self):
         """Guards against reintroducing a custom 'highest percentage wins' rule on top of predict()."""
@@ -334,7 +366,8 @@ class AdminDashboardTests(TestCase):
         self.assertEqual((log.dt_label, log.dt_confidence), ('Positive', 100))
         self.assertEqual(response.context['nb_threshold_pct'], 90)
         self.assertContains(response, 'NB &amp; DT Results', html=False)
-        self.assertContains(response, '81%')
+        self.assertNotContains(response, '81%')  # per-model confidence percentages are not shown
+        self.assertNotContains(response, 'isu-model-pct')
         self.assertContains(response, 'at least 90% confident')
 
     @patch('feedback.views.ml.component_predictions', side_effect=OSError('model file missing'))

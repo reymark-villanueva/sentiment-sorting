@@ -177,6 +177,9 @@ def _attach_model_labels(logs):
         return None
     try:
         result = ml.component_predictions([log.comment for log in logs])
+    except ml.ModelUnavailable as exc:
+        logger.warning("Skipping Naive Bayes / Decision Tree predictions: %s", exc)
+        return None
     except Exception:
         logger.exception("Could not compute Naive Bayes / Decision Tree predictions")
         return None
@@ -202,6 +205,16 @@ def feedback_step(request):
     return render(request, 'feedback_step.html', context)
 
 
+def _model_unavailable_response(request, form):
+    """503 response for a submission that can't be classified right now."""
+    message = "Feedback can't be submitted right now. Please try again later."
+    if _is_ajax(request):
+        return JsonResponse({'status': 'unavailable', 'message': message}, status=503)
+    messages.error(request, message)
+    context = {'services': LibraryService.objects.filter(is_active=True), 'form': form}
+    return render(request, 'feedback_step.html', context, status=503)
+
+
 @require_POST
 def feedback_submit(request):
     """Validate and persist a feedback submission (standard POST or AJAX/JSON)."""
@@ -210,7 +223,12 @@ def feedback_submit(request):
     if form.is_valid():
         log = form.save(commit=False)
         # comment is required by the form, so there's always text to classify.
-        log.sentiment = ml.classify(form.cleaned_data['comment']).capitalize()
+        try:
+            log.sentiment = ml.classify(form.cleaned_data['comment']).capitalize()
+        except ml.ModelUnavailable:
+            # Don't save an unlabelled (or guessed) row; ask the student to retry later.
+            logger.exception("Feedback not saved: sentiment model is unavailable")
+            return _model_unavailable_response(request, form)
         log.save()
         reference_code = f"ISU-LIB-{log.pk:06d}"
 

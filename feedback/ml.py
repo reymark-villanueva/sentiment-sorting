@@ -3,7 +3,7 @@ Isabela State University - Cauayan Campus Library
 Trained Sentiment Classification Model — Loading & Inference
 
 `sentiment_model.pkl` and `vectorizer.pkl` were produced by
-`sentiment_sorting_merged_library_V2.ipynb` via joblib.dump(). The `Hybrid`
+`v7 model/sentiment_sorting_LFS_V7.ipynb` (trained on `LFS v6 DATA.csv`) via joblib.dump(). The `Hybrid`
 class and `preprocess()` function below must match that notebook exactly:
 joblib/pickle resolve a custom class by import path (`feedback.ml.Hybrid`),
 not by copying its code into the pickle, so this file has to define the
@@ -58,9 +58,55 @@ class Hybrid(BaseEstimator, ClassifierMixin):
         return pred
 
 
+# Words that flip the meaning of what follows (English and Tagalog). After one of these, the next
+# NEGATION_WINDOW words of the same clause are preceded by a `neg` token.
+NEGATORS = {'not', 'no', 'never', 'none', 'nothing', 'nobody', 'without', 'cannot', 'hardly',
+            'hindi', 'di', 'walang', 'wala', 'ayaw', 'huwag', 'wag'}
+NEGATION_WINDOW = 3
+
+# Common short forms and Tagalog spelling variants mapped to one spelling.
+SLANG = {'u': 'you', 'ur': 'your', 'pls': 'please', 'plz': 'please', 'thx': 'thanks', 'tnx': 'thanks',
+         'ty': 'thank you', 'ok': 'okay', 'okey': 'okay', 'di': 'hindi', 'wag': 'huwag', 'ung': 'yung',
+         'yun': 'yung', 'tlga': 'talaga', 'talga': 'talaga', 'nmn': 'naman', 'nman': 'naman', 'lng': 'lang',
+         'sna': 'sana', 'bkt': 'bakit', 'sobrang': 'sobra', 'dun': 'doon'}
+
+
+def _normalize_slang(text):
+    text = re.sub(r'wi[\s\-]?fi', 'wifi', text)                       # wi-fi / wi fi / wifi -> wifi
+    return re.sub(r"[a-z']+", lambda m: SLANG.get(m.group(0), m.group(0)), text)
+
+
+def _expand_contractions(text):
+    text = text.replace('\u2019', "'")
+    text = re.sub(r"won't", 'will not', text)
+    text = re.sub(r"can't", 'can not', text)
+    return re.sub(r"n't\b", ' not', text)                                # don't -> do not
+
+
+def _mark_negation(text):
+    """Put a `neg` token before each of the NEGATION_WINDOW words after a negator, within one clause."""
+    out = []
+    for clause in re.split(r'[.,;:!?\n]+', text):
+        left = 0
+        for w in re.findall(r"[a-z']+", clause):
+            if w in NEGATORS:
+                left = NEGATION_WINDOW
+                out.append(w)
+            elif left > 0:
+                out.extend(['neg', w])
+                left -= 1
+            else:
+                out.append(w)
+    return ' '.join(out)
+
+
 def preprocess(text):
-    """Must match the cleaning applied to training text exactly (see notebook cell 4)."""
-    text = re.sub(r'[^a-zA-Z\s]', ' ', str(text).lower())
+    """Must match the cleaning applied to training text exactly (see the notebook's preprocessing cell).
+
+    Lowercase -> slang / spelling normalization -> contraction expansion -> negation marking -> keep letters only.
+    """
+    text = _mark_negation(_expand_contractions(_normalize_slang(str(text).lower())))
+    text = re.sub(r'[^a-zA-Z\s]', ' ', text)
     return ' '.join(text.split())
 
 
@@ -79,9 +125,22 @@ _vectorizer = None
 _loaded_mtimes = None
 
 
+class ModelUnavailable(RuntimeError):
+    """The trained model or vectorizer file is missing, so nothing can be classified."""
+
+
 def _file_mtimes():
-    """Modification times of the model + vectorizer files."""
-    return tuple((settings.BASE_DIR / name).stat().st_mtime_ns for name in (MODEL_FILE, VECTORIZER_FILE))
+    """Modification times of the model + vectorizer files.
+
+    Raises ModelUnavailable if either file is missing, so callers can handle that
+    one case instead of catching a bare FileNotFoundError.
+    """
+    try:
+        return tuple((settings.BASE_DIR / name).stat().st_mtime_ns for name in (MODEL_FILE, VECTORIZER_FILE))
+    except FileNotFoundError as exc:
+        raise ModelUnavailable(
+            f"Sentiment model files not found ({MODEL_FILE}, {VECTORIZER_FILE}) in {settings.BASE_DIR}."
+        ) from exc
 
 
 def _load():

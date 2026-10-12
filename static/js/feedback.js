@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           const firstError = data && data.errors
             ? Object.values(data.errors)[0][0].message
-            : 'Please check your responses and try again.';
+            : (data && data.message) || 'Please check your responses and try again.';
           alert(`We couldn't submit your feedback: ${firstError}`);
         }
       })

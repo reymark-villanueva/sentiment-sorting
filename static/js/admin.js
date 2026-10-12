@@ -23,6 +23,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Desktop sidebar collapse: shrinks to a rail of logo + icons. The state is remembered across pages.
+  const btnCollapseSidebar = document.getElementById('btnCollapseSidebar');
+  const syncCollapseButton = () => {
+    if (!btnCollapseSidebar) return;
+    const collapsed = document.documentElement.classList.contains('sidebar-collapsed');
+    const label = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+    btnCollapseSidebar.setAttribute('aria-expanded', String(!collapsed));
+    btnCollapseSidebar.setAttribute('aria-label', label);
+    btnCollapseSidebar.title = label;
+  };
+  document.querySelectorAll('.isu-nav-item').forEach((item) => {
+    const label = item.querySelector('span');
+    if (label) item.title = label.textContent.trim();  // tooltip for the icon-only rail
+  });
+  if (btnCollapseSidebar) {
+    btnCollapseSidebar.addEventListener('click', () => {
+      const collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+      try { localStorage.setItem('isuSidebarCollapsed', collapsed ? '1' : '0'); } catch (e) { /* storage unavailable */ }
+      syncCollapseButton();
+    });
+    syncCollapseButton();
+  }
+
   // The date-range tabs and Export Report button are plain server-rendered
   // links (see admin/dashboard.html) and need no JS.
 

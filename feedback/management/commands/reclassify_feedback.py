@@ -10,7 +10,7 @@ rows and, with --apply, updates them.
     python manage.py reclassify_feedback --apply   # save the new labels
 """
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from feedback import ml
@@ -27,6 +27,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, apply=False, **options):
+        try:
+            ml.classify('')  # fail before touching any row if the model files are missing
+        except ml.ModelUnavailable as exc:
+            raise CommandError(f"{exc} Train and save the model first.")
         logs = FeedbackLog.objects.select_related('service').order_by('timestamp')
         changed = 0
         for log in logs:

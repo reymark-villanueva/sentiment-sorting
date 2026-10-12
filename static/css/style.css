@@ -731,12 +731,40 @@ svg {
   bottom: 0;
   left: 0;
   z-index: 150;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .isu-sidebar-header {
+  position: relative;
   padding: 24px 20px 20px;
   border-bottom: 1px solid var(--color-border-light);
+}
+
+/* Desktop sidebar collapse toggle (hidden at tablet/mobile widths, which use the hamburger) */
+.isu-sidebar-collapse-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-deep-green);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.isu-sidebar-collapse-btn:hover {
+  background-color: var(--color-mint-subtle);
+}
+
+.isu-sidebar-collapse-btn svg {
+  transition: transform 0.25s ease;
 }
 
 .isu-admin-brand {
@@ -900,6 +928,56 @@ svg {
   flex: 1;
   padding: 36px 40px 60px;
   min-width: 0;
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Collapsed desktop sidebar: a narrow rail that keeps the logo and nav icons on the left */
+@media (min-width: 1025px) {
+  .sidebar-collapsed {
+    --sidebar-width: 76px;
+  }
+
+  .sidebar-collapsed .isu-sidebar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+  }
+
+  .sidebar-collapsed .isu-sidebar-collapse-btn {
+    position: static;
+  }
+
+  .sidebar-collapsed .isu-sidebar-collapse-btn svg {
+    transform: rotate(180deg);
+  }
+
+  .sidebar-collapsed .isu-admin-brand-info,
+  .sidebar-collapsed .isu-nav-item > span,
+  .sidebar-collapsed .isu-sidebar-nav-heading,
+  .sidebar-collapsed .isu-user-meta {
+    display: none;
+  }
+
+  .sidebar-collapsed .isu-sidebar-nav {
+    padding: 16px 0;
+    align-items: center;
+  }
+
+  .sidebar-collapsed .isu-nav-item {
+    justify-content: center;
+    width: 48px;
+    padding: 11px 0;
+  }
+
+  .sidebar-collapsed .isu-sidebar-footer {
+    padding: 16px 0;
+  }
+
+  .sidebar-collapsed .isu-user-card {
+    justify-content: center;
+  }
 }
 
 /* Mobile Admin Toggle */
@@ -1504,6 +1582,10 @@ svg {
    RESPONSIVE QUERIES
    ========================================================================== */
 @media (max-width: 1024px) {
+  .isu-sidebar-collapse-btn {
+    display: none;
+  }
+
   .isu-admin-sidebar {
     transform: translateX(-100%);
   }

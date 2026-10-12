@@ -346,7 +346,7 @@
         {% endif %}
       </p>
       <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 4px;">
-        Sentiment is the hybrid model's final result. NB &amp; DT Results show how the Naive Bayes and Decision Tree models each classify the same feedback, with each model's confidence.{% if nb_threshold_pct %} The hybrid uses Naive Bayes when it is at least {{ nb_threshold_pct }}% confident, and the Decision Tree otherwise.{% endif %}
+        Sentiment is the hybrid model's final result. NB &amp; DT Results show how the Naive Bayes and Decision Tree models each classify the same feedback.{% if nb_threshold_pct %} The hybrid uses Naive Bayes when it is at least {{ nb_threshold_pct }}% confident, and the Decision Tree otherwise.{% endif %}
       </p>
     </div>
     <span class="isu-table-tag" style="background-color: var(--color-mint-subtle); color: var(--color-deep-green);">
@@ -395,12 +395,10 @@
               <div class="isu-model-line">
                 <span class="isu-model-tag" title="Naive Bayes">NB</span>
                 {% include "admin/_sentiment_pill.html" with sentiment=row.nb_label %}
-                <span class="isu-model-pct" title="Naive Bayes confidence">{{ row.nb_confidence }}%</span>
               </div>
               <div class="isu-model-line">
                 <span class="isu-model-tag" title="Decision Tree">DT</span>
                 {% include "admin/_sentiment_pill.html" with sentiment=row.dt_label %}
-                <span class="isu-model-pct" title="Decision Tree confidence">{{ row.dt_confidence }}%</span>
               </div>
             </div>
             {% else %}
