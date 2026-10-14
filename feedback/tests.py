@@ -365,10 +365,10 @@ class AdminDashboardTests(TestCase):
         self.assertEqual((log.nb_label, log.nb_confidence), ('Neutral', 81))
         self.assertEqual((log.dt_label, log.dt_confidence), ('Positive', 100))
         self.assertEqual(response.context['nb_threshold_pct'], 90)
-        self.assertContains(response, 'NB &amp; DT Results', html=False)
+        self.assertContains(response, 'Results</th>')  # the NB & DT Results column header
         self.assertNotContains(response, '81%')  # per-model confidence percentages are not shown
         self.assertNotContains(response, 'isu-model-pct')
-        self.assertContains(response, 'at least 90% confident')
+        self.assertNotContains(response, 'at least 90% confident')  # explanatory note was removed
 
     @patch('feedback.views.ml.component_predictions', side_effect=OSError('model file missing'))
     def test_dashboard_renders_when_model_results_unavailable(self, mock_components):

@@ -338,16 +338,11 @@
   <div class="isu-table-header-wrap">
     <div>
       <h3 class="isu-table-title">Recent Feedback Logs</h3>
+      {% if selected_service %}
       <p style="font-size: 0.8125rem; color: var(--color-text-muted);">
-        {% if selected_service %}
-          Filtered to <strong>{{ selected_service.name }}</strong> — continuous stream, negative-first.
-        {% else %}
-          Continuous stream of student and faculty reviews with direct administrative escalation triggers.
-        {% endif %}
+        Filtered to <strong>{{ selected_service.name }}</strong> — continuous stream, negative-first.
       </p>
-      <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 4px;">
-        Sentiment is the hybrid model's final result. NB &amp; DT Results show how the Naive Bayes and Decision Tree models each classify the same feedback.{% if nb_threshold_pct %} The hybrid uses Naive Bayes when it is at least {{ nb_threshold_pct }}% confident, and the Decision Tree otherwise.{% endif %}
-      </p>
+      {% endif %}
     </div>
     <span class="isu-table-tag" style="background-color: var(--color-mint-subtle); color: var(--color-deep-green);">
       {{ page_obj.paginator.count }} Total Entries
