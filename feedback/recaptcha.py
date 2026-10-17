@@ -28,7 +28,12 @@ def verify(token, remote_ip=None):
     try:
         request = urllib.request.Request(VERIFY_URL, data=urllib.parse.urlencode(payload).encode())
         with urllib.request.urlopen(request, timeout=5) as response:
-            return bool(json.load(response).get('success'))
+            result = json.load(response)
+        if not result.get('success'):
+            # e.g. invalid-input-secret (wrong secret key), invalid-input-response (expired or
+            # reused token), hostname-mismatch. Logged so a misconfiguration is visible.
+            logger.warning("reCAPTCHA verification failed: %s", result.get('error-codes'))
+        return bool(result.get('success'))
     except Exception:
         logger.exception("reCAPTCHA verification request failed")
         return False

@@ -83,8 +83,9 @@ if not DEBUG:
 
 # Google reCAPTCHA v2 ("I'm not a robot") on the public feedback form. Both keys come from
 # .env (see .env.example). The secret key must never reach a template or the browser.
-RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY', '')
-RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY', '')
+# Stray quotes/spaces pasted around a key would make Google reject it, so they are stripped.
+RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY', '').strip().strip('\'"').strip()
+RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY', '').strip().strip('\'"').strip()
 
 
 # Application definition

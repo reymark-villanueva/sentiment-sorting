@@ -208,10 +208,11 @@ def verify_captcha(request):
     token = request.POST.get('g-recaptcha-response')
     if not recaptcha.verify(token, request.META.get('REMOTE_ADDR')):
         request.session.pop(CAPTCHA_SESSION_KEY, None)
-        return JsonResponse(
-            {'status': 'error', 'message': "Please tick \"I'm not a robot\" before giving feedback."},
-            status=400,
+        message = (
+            "We couldn't verify the check. Please tick \"I'm not a robot\" again and retry."
+            if token else "Please tick \"I'm not a robot\" before giving feedback."
         )
+        return JsonResponse({'status': 'error', 'message': message}, status=400)
     request.session[CAPTCHA_SESSION_KEY] = True
     return JsonResponse({'status': 'success', 'redirect': reverse('feedback_step')})
 
