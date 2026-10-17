@@ -68,7 +68,8 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS')
 CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
 if ON_VERCEL:
-    ALLOWED_HOSTS.append('.vercel.app')
+    ALLOWED_HOSTS.extend(['.vercel.app', 'isu-cc-library-feedback-system.vercel.app'])
+    CSRF_TRUSTED_ORIGINS.append('https://isu-cc-library-feedback-system.vercel.app')
     for _url in (os.environ.get('VERCEL_URL'), os.environ.get('VERCEL_PROJECT_PRODUCTION_URL'),
                  os.environ.get('VERCEL_BRANCH_URL')):
         if _url:

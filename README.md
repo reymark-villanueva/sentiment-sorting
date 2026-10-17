@@ -66,8 +66,11 @@ from the real environment, which takes priority. `DEBUG` is on locally and alway
    `CSRF_TRUSTED_ORIGINS` for a custom domain; `*.vercel.app` URLs are allowed automatically).
 3. Add the deployed domain to the reCAPTCHA key's allowed domains.
 
-`vercel.json` routes every request to `api/index.py`, `.vercelignore` keeps the bundle small, and
-WhiteNoise serves the static files, so there is no build step.
+Vercel detects Django from `manage.py` and runs `isu_library_project.wsgi.application`, so no custom
+entry point or rewrite is needed (set the project's Framework Preset to Django if it was saved as
+Other). `vercel.json` only bundles the model files and templates with the function and sets its
+time limit, `.vercelignore` keeps the bundle small, and Vercel collects `static/` and serves it
+from its CDN automatically.
 
 Visit:
 - `/` — public portal

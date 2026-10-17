@@ -1,7 +1,7 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/index.py": {
+    "isu_library_project/wsgi.py": {
       "includeFiles": "{sentiment_model.pkl,vectorizer.pkl,templates/**,static/**}",
       "maxDuration": 30
     }
