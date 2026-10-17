@@ -1,0 +1,17 @@
+# Not needed to run the app on Vercel; keeps the deployment bundle small.
+.git
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+__pycache__/
+*.pyc
+db.sqlite3
+staticfiles/
+v4 model/
+v7 model/
+LFS v6 DATA.csv
+sentiment word list.csv
+*.docx
+tests/

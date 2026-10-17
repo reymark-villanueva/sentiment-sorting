@@ -38,8 +38,18 @@ else:
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+def _env_list(name):
+    """A comma-separated environment variable as a list of non-empty, stripped items."""
+    return [item.strip() for item in os.environ.get(name, '').split(',') if item.strip()]
+
+
+# True when running on Vercel, which sets VERCEL=1 for every build and deployment.
+ON_VERCEL = bool(os.environ.get('VERCEL'))
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DJANGO_DEBUG=1/0 overrides this. Otherwise debug is on locally and always off on Vercel.
+_debug_env = os.environ.get('DJANGO_DEBUG', '').strip().lower()
+DEBUG = _debug_env in ('1', 'true', 'yes', 'on') if _debug_env else not ON_VERCEL
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Set DJANGO_SECRET_KEY in the environment or in .env (generate one with
@@ -52,7 +62,29 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("Set the DJANGO_SECRET_KEY environment variable.")
     SECRET_KEY = 'django-insecure-dev-only-key-do-not-use-in-production'
 
-ALLOWED_HOSTS = []
+# Extra hosts/origins come from ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS (comma-separated, e.g.
+# "library.example.edu.ph" and "https://library.example.edu.ph"). On Vercel, the deployment's own
+# URLs are added automatically so the preview and production URLs work without extra setup.
+ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS')
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+if ON_VERCEL:
+    ALLOWED_HOSTS.append('.vercel.app')
+    for _url in (os.environ.get('VERCEL_URL'), os.environ.get('VERCEL_PROJECT_PRODUCTION_URL'),
+                 os.environ.get('VERCEL_BRANCH_URL')):
+        if _url:
+            CSRF_TRUSTED_ORIGINS.append(f'https://{_url}')
+
+# Vercel terminates TLS and forwards requests over HTTP, so trust its forwarded-protocol header.
+# Cookies are only sent over HTTPS once debug is off (i.e. in production).
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+# Google reCAPTCHA v2 ("I'm not a robot") on the public feedback form. Both keys come from
+# .env (see .env.example). The secret key must never reach a template or the browser.
+RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY', '')
+RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY', '')
 
 
 # Application definition
@@ -74,6 +106,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Serves /static/ itself: Vercel's serverless functions have no web server in front of Django.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -112,6 +146,19 @@ DATABASES = {
     }
 }
 
+# DATABASE_URL (a Supabase Postgres connection string) switches the app to Postgres. Without it,
+# local development keeps using db.sqlite3. Vercel's filesystem is temporary, so SQLite cannot be
+# used there. Use Supabase's pooled connection string: serverless functions open a new connection
+# per request, so connections are not kept open (conn_max_age=0), and the transaction pooler does
+# not support server-side cursors.
+if os.environ.get('DATABASE_URL'):
+    import dj_database_url
+
+    DATABASES['default'] = dj_database_url.parse(
+        os.environ['DATABASE_URL'], conn_max_age=0, conn_health_checks=False, ssl_require=True,
+    )
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -149,6 +196,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+# WhiteNoise serves files straight from the app's static folders (including Django admin's), so
+# no `collectstatic` step is needed on Vercel. Pages add ?v=<mtime> to the CSS, so caching is safe.
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MAX_AGE = 3600 if not DEBUG else 0
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
