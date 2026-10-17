@@ -37,7 +37,8 @@
       </p>
 
       <!-- Prominent Pill-Shaped CTA Button -->
-      <div class="isu-hero-cta-group">
+      <div class="isu-hero-cta-group" id="heroCta" data-verify-url="{% url 'verify_captcha' %}">
+        {% csrf_token %}
         <a href="{% url 'feedback_step' %}" class="isu-btn-primary isu-btn-on-photo" id="btnHeroGiveFeedback">
           <span>Give Feedback</span>
           <span class="isu-btn-icon">
@@ -47,6 +48,12 @@
             </svg>
           </span>
         </a>
+        <!-- Students must tick "I'm not a robot" before Give Feedback will open the form. -->
+        <div style="display: flex; justify-content: center;">
+          <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+        </div>
+        <p id="captchaError" role="alert" hidden
+           style="color: #ffd6d6; font-size: 0.9375rem; font-weight: 600; margin: 0; text-align: center;"></p>
       </div>
 
       <!-- Quick Assurance Note -->
@@ -62,3 +69,51 @@
 {% endblock content %}
 
 {% block footer %}{% endblock footer %}
+
+{% block extra_js %}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script>
+  // Give Feedback only opens the form after the server has verified the reCAPTCHA tick.
+  (function () {
+    var cta = document.getElementById('heroCta');
+    var button = document.getElementById('btnHeroGiveFeedback');
+    var errorBox = document.getElementById('captchaError');
+    if (!cta || !button) return;
+
+    function showError(text) {
+      errorBox.textContent = text;
+      errorBox.hidden = false;
+    }
+
+    button.addEventListener('click', function (event) {
+      event.preventDefault();
+      errorBox.hidden = true;
+      var token = window.grecaptcha ? window.grecaptcha.getResponse() : '';
+      if (!token) {
+        showError('Please tick "I\'m not a robot" before giving feedback.');
+        return;
+      }
+      var body = new URLSearchParams({
+        'g-recaptcha-response': token,
+        'csrfmiddlewaretoken': cta.querySelector('[name=csrfmiddlewaretoken]').value
+      });
+      fetch(cta.dataset.verifyUrl, { method: 'POST', body: body, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (res) {
+          return res.json().catch(function () { return null; }).then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+          if (result.ok && result.data && result.data.redirect) {
+            window.location.href = result.data.redirect;
+            return;
+          }
+          showError((result.data && result.data.message) || 'Could not verify. Please try again.');
+          if (window.grecaptcha) window.grecaptcha.reset();
+        })
+        .catch(function () {
+          showError('A network error occurred. Please try again.');
+          if (window.grecaptcha) window.grecaptcha.reset();
+        });
+    });
+  })();
+</script>
+{% endblock extra_js %}

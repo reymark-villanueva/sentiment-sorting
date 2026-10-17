@@ -93,9 +93,9 @@
 
 .isu-hero-cta-group {
   display: flex;
+  flex-direction: column;  /* button on top, reCAPTCHA checkbox underneath */
   align-items: center;
   gap: 16px;
-  flex-wrap: wrap;
   justify-content: center;
 }
 

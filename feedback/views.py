@@ -10,20 +10,27 @@ import re
 from datetime import date, datetime, time, timedelta
 
 from django.contrib import messages
+from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
-from . import ml
+from . import ml, recaptcha
 from .aspects import aspects_by_service_id
 from .forms import FeedbackForm
 from .models import FeedbackLog, LibraryService
 
 logger = logging.getLogger(__name__)
+
+# Set in the session once a student has ticked "I'm not a robot" on the landing page;
+# the feedback form and its submit endpoint both require it. Cleared after each submission.
+CAPTCHA_SESSION_KEY = 'recaptcha_passed'
+CAPTCHA_REQUIRED_MESSAGE = "Please tick \"I'm not a robot\" on the home page before giving feedback."
 
 DONUT_RADIUS = 38
 DONUT_CIRCUMFERENCE = 2 * math.pi * DONUT_RADIUS  # ≈ 238.8, matches the dashboard SVG r=38
@@ -191,12 +198,29 @@ def _attach_model_labels(logs):
 
 
 def home(request):
-    """Public landing page: hero headline, CTA, and visual only."""
-    return render(request, 'home.html')
+    """Public landing page: hero headline, CTA, and the reCAPTCHA checkbox."""
+    return render(request, 'home.html', {'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY})
+
+
+@require_POST
+def verify_captcha(request):
+    """Check the landing page's reCAPTCHA token and, if valid, unlock the feedback form."""
+    token = request.POST.get('g-recaptcha-response')
+    if not recaptcha.verify(token, request.META.get('REMOTE_ADDR')):
+        request.session.pop(CAPTCHA_SESSION_KEY, None)
+        return JsonResponse(
+            {'status': 'error', 'message': "Please tick \"I'm not a robot\" before giving feedback."},
+            status=400,
+        )
+    request.session[CAPTCHA_SESSION_KEY] = True
+    return JsonResponse({'status': 'success', 'redirect': reverse('feedback_step')})
 
 
 def feedback_step(request):
     """The public feedback wizard: pick a service, write feedback."""
+    if not request.session.get(CAPTCHA_SESSION_KEY):
+        messages.error(request, CAPTCHA_REQUIRED_MESSAGE)
+        return redirect('home')
     services = LibraryService.objects.filter(is_active=True)
     context = {
         'services': services,
@@ -211,7 +235,10 @@ def _model_unavailable_response(request, form):
     if _is_ajax(request):
         return JsonResponse({'status': 'unavailable', 'message': message}, status=503)
     messages.error(request, message)
-    context = {'services': LibraryService.objects.filter(is_active=True), 'form': form}
+    context = {
+        'services': LibraryService.objects.filter(is_active=True),
+        'form': form,
+    }
     return render(request, 'feedback_step.html', context, status=503)
 
 
@@ -219,6 +246,15 @@ def _model_unavailable_response(request, form):
 def feedback_submit(request):
     """Validate and persist a feedback submission (standard POST or AJAX/JSON)."""
     form = FeedbackForm(request.POST)
+
+    if not request.session.get(CAPTCHA_SESSION_KEY):
+        if _is_ajax(request):
+            return JsonResponse(
+                {'status': 'error', 'errors': {'captcha': [{'message': CAPTCHA_REQUIRED_MESSAGE}]}},
+                status=403,
+            )
+        messages.error(request, CAPTCHA_REQUIRED_MESSAGE)
+        return redirect('home')
 
     if form.is_valid():
         log = form.save(commit=False)
@@ -230,6 +266,7 @@ def feedback_submit(request):
             logger.exception("Feedback not saved: sentiment model is unavailable")
             return _model_unavailable_response(request, form)
         log.save()
+        request.session.pop(CAPTCHA_SESSION_KEY, None)  # the next feedback needs a fresh check
         reference_code = f"ISU-LIB-{log.pk:06d}"
 
         if _is_ajax(request):

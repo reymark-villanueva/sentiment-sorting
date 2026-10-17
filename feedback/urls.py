@@ -28,6 +28,7 @@ urlpatterns = [
     ),
 
     # Public Feedback Wizard (text-only: pick a service, write feedback)
+    path('verify-captcha/', views.verify_captcha, name='verify_captcha'),
     path('feedback/', views.feedback_step, name='feedback_step'),
     path('feedback/submit/', views.feedback_submit, name='feedback_submit'),
 

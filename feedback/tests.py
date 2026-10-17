@@ -10,14 +10,22 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from . import ml
 from .ml import ModelUnavailable
 from .models import FeedbackLog, LibraryService
+from .views import CAPTCHA_SESSION_KEY
 
 User = get_user_model()
+
+
+def pass_captcha(client):
+    """Mark `client`'s session as having ticked "I'm not a robot" on the landing page."""
+    session = client.session
+    session[CAPTCHA_SESSION_KEY] = True
+    session.save()
 
 
 class LibraryServiceModelTests(TestCase):
@@ -69,10 +77,42 @@ class PublicViewTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertNotContains(response, reverse('staff_login'))
 
-    def test_feedback_step_returns_200(self):
+    def test_feedback_step_returns_200_after_captcha(self):
+        pass_captcha(self.client)
         response = self.client.get(reverse('feedback_step'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'feedback_step.html')
+
+    def test_feedback_step_without_captcha_redirects_home_with_error(self):
+        response = self.client.get(reverse('feedback_step'), follow=True)
+        self.assertRedirects(response, reverse('home'))
+        self.assertContains(response, "not a robot")
+
+    def test_home_shows_the_recaptcha_widget(self):
+        with override_settings(RECAPTCHA_SITE_KEY='test-site-key'):
+            response = self.client.get(reverse('home'))
+        self.assertContains(response, 'g-recaptcha')
+        self.assertContains(response, 'test-site-key')
+
+
+class VerifyCaptchaTests(TestCase):
+    url = '/verify-captcha/'
+
+    @patch('feedback.views.recaptcha.verify', return_value=True)
+    def test_valid_token_unlocks_the_form(self, mock_verify):
+        response = self.client.post(self.url, {'g-recaptcha-response': 'token'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['redirect'], reverse('feedback_step'))
+        self.assertEqual(self.client.get(reverse('feedback_step')).status_code, 200)
+
+    @patch('feedback.views.recaptcha.verify', return_value=False)
+    def test_invalid_token_is_rejected_and_form_stays_locked(self, mock_verify):
+        response = self.client.post(self.url, {'g-recaptcha-response': 'bad'})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.client.get(reverse('feedback_step')).status_code, 302)
+
+    def test_get_not_allowed(self):
+        self.assertEqual(self.client.get(self.url).status_code, 405)
 
 
 class FeedbackSubmitTests(TestCase):
@@ -82,6 +122,28 @@ class FeedbackSubmitTests(TestCase):
     def setUp(self):
         self.service = LibraryService.objects.first()
         self.url = reverse('feedback_submit')
+        pass_captcha(self.client)
+
+    @patch('feedback.views.ml.classify', return_value='negative')
+    def test_submit_without_captcha_is_rejected_and_nothing_is_saved(self, mock_classify):
+        client = Client()  # fresh session: never ticked "I'm not a robot"
+        response = client.post(
+            self.url,
+            {'service': self.service.pk, 'comment': 'The wifi needs to be faster.'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('captcha', response.json()['errors'])
+        self.assertEqual(FeedbackLog.objects.count(), 0)
+        mock_classify.assert_not_called()
+
+    @patch('feedback.views.ml.classify', return_value='negative')
+    def test_captcha_must_be_redone_for_each_submission(self, mock_classify):
+        data = {'service': self.service.pk, 'comment': 'The wifi needs to be faster.'}
+        self.assertEqual(self.client.post(self.url, data).status_code, 302)
+        response = self.client.post(self.url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(FeedbackLog.objects.count(), 1)
 
     @patch('feedback.views.ml.classify', return_value='negative')
     def test_valid_standard_post_creates_log_and_redirects(self, mock_classify):
@@ -228,6 +290,7 @@ class SentimentPredictionTests(TestCase):
         from html import unescape
         service = LibraryService.objects.filter(is_active=True).first()
         for text, expected in self.clear_english:
+            pass_captcha(self.client)
             response = self.client.post(reverse('feedback_submit'), {'service': service.pk, 'comment': text})
             self.assertIn(response.status_code, (200, 302))
             saved = FeedbackLog.objects.get(comment=text)
